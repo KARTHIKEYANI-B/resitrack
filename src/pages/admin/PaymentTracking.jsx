@@ -1,0 +1,531 @@
+import { useState, useEffect, useCallback } from 'react'
+import {
+  CheckCircle, XCircle, Clock, Plus, RefreshCw,
+  Users, UserCheck, UserX, AlertTriangle, TrendingUp,
+  Smartphone, Building2, Banknote, CreditCard,
+  ShieldCheck, ShieldX, Shield, ChevronDown, IndianRupee
+} from 'lucide-react'
+import { adminAPI } from '../../api/adminAPI'
+import { PageLoader } from '../../components/common/LoadingSpinner'
+import SearchBar, { FilterSelect } from '../../components/common/SearchBar'
+import Pagination from '../../components/common/Pagination'
+import EmptyState from '../../components/common/EmptyState'
+import Modal from '../../components/common/Modal'
+import { formatCurrency } from '../../utils/formatCurrency'
+import { formatDate } from '../../utils/dateUtils'
+import toast from 'react-hot-toast'
+
+/* ── Constants ───────────────────────────────────────────────────────── */
+const STATUS_OPTIONS = [
+  { value: 'PENDING_VERIFICATION', label: 'Pending Verification' },
+  { value: 'PAID',                 label: 'Paid' },
+  { value: 'PENDING',              label: 'Pending' },
+  { value: 'OVERDUE',              label: 'Overdue' },
+]
+const PAYMENT_MODES = [
+  { value: 'UPI',           label: 'UPI',          icon: Smartphone },
+  { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2 },
+  { value: 'CASH',          label: 'Cash',          icon: Banknote },
+  { value: 'CARD',          label: 'Card',          icon: CreditCard },
+]
+const MONTH_OPTIONS = (() => {
+  const opts = []; const now = new Date()
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    opts.push({
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+    })
+  }
+  return opts
+})()
+
+/* ── Status badge ────────────────────────────────────────────────────── */
+function StatusBadge({ status }) {
+  const map = {
+    PAID:                 { cls: 'bg-green-950/50 border-green-800/50 text-green-400',    icon: ShieldCheck,    label: 'Paid' },
+    PENDING_VERIFICATION: { cls: 'bg-yellow-950/50 border-yellow-800/50 text-yellow-400', icon: Clock,          label: 'Awaiting Verify' },
+    PENDING:              { cls: 'bg-[#e1e5f2] border-[#bfdbf7] text-[#022b3a]/50',       icon: Shield,         label: 'Pending' },
+    OVERDUE:              { cls: 'bg-red-950/50 border-red-800/50 text-red-400',           icon: AlertTriangle,  label: 'Overdue' },
+  }
+  const c = map[status] || map.PENDING; const Icon = c.icon
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${c.cls}`}>
+      <Icon size={10} />{c.label}
+    </span>
+  )
+}
+
+/* ── Method badge ────────────────────────────────────────────────────── */
+function MethodBadge({ method }) {
+  const map = { UPI: Smartphone, BANK_TRANSFER: Building2, CASH: Banknote, CARD: CreditCard, GPAY: Smartphone }
+  const Icon = map[method] || CreditCard
+  return <span className="inline-flex items-center gap-1 text-xs text-[#1f7a8c]"><Icon size={11} />{method || '—'}</span>
+}
+
+/* ── Collection Progress Bar ─────────────────────────────────────────── */
+function CollectionBar({ pct }) {
+  const clamped = Math.min(100, Math.max(0, pct))
+  const color = clamped >= 80 ? 'bg-green-500' : clamped >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+  return (
+    <div className="w-full bg-[#e1e5f2] rounded-full h-2 overflow-hidden">
+      <div className={`h-2 rounded-full transition-all ${color}`} style={{ width: `${clamped}%` }} />
+    </div>
+  )
+}
+
+/* ── Add Payment Modal ───────────────────────────────────────────────── */
+function AddPaymentModal({ open, onClose, onSuccess }) {
+  const today        = new Date().toISOString().split('T')[0]
+  const currentMonth = MONTH_OPTIONS[0]?.value || ''
+  const [form, setForm] = useState({
+    ownerName: '', ownerPhone: '', paymentMode: 'UPI', paidAmount: '',
+    paymentDate: today, paymentMonth: currentMonth,
+    verifiedByAdmin: false, transactionId: '', description: '',
+  })
+  const [errors,     setErrors]     = useState({})
+  const [submitting, setSubmitting] = useState(false)
+
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: '' })) }
+
+  const validate = () => {
+    const e = {}
+    if (!form.ownerName.trim())   e.ownerName  = 'Owner name is required'
+    if (!form.ownerPhone.trim())  e.ownerPhone = 'Phone number is required'
+    if (!/^[6-9]\d{9}$/.test(form.ownerPhone.trim())) e.ownerPhone = 'Enter valid 10-digit mobile number'
+    if (!form.paidAmount || isNaN(form.paidAmount) || Number(form.paidAmount) <= 0)
+      e.paidAmount = 'Enter a valid amount > 0'
+    if (!form.paymentDate)        e.paymentDate  = 'Payment date is required'
+    if (!form.paymentMonth)       e.paymentMonth = 'Billing month is required'
+    return e
+  }
+
+  const handleSubmit = async () => {
+    const e = validate()
+    if (Object.keys(e).length) { setErrors(e); return }
+    setSubmitting(true)
+    try {
+      await adminAPI.createAdminPayment({
+        ownerName: form.ownerName.trim(), ownerPhone: form.ownerPhone.trim(),
+        paymentMode: form.paymentMode, paidAmount: parseFloat(form.paidAmount),
+        paymentDate: form.paymentDate, paymentMonth: form.paymentMonth,
+        verifiedByAdmin: form.verifiedByAdmin,
+        transactionId: form.transactionId.trim() || undefined,
+        description: form.description.trim() || undefined,
+      })
+      toast.success(form.verifiedByAdmin
+        ? 'Payment recorded & verified. Analytics updated!'
+        : 'Payment recorded. Pending your verification.')
+      onSuccess(); onClose()
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to record payment'
+      toast.error(msg)
+      if (msg.toLowerCase().includes('phone') || msg.toLowerCase().includes('resident'))
+        setErrors(e => ({ ...e, ownerPhone: msg }))
+    } finally { setSubmitting(false) }
+  }
+
+  const Err = ({ f }) => errors[f] ? <p className="text-xs text-red-400 mt-1">{errors[f]}</p> : null
+
+  return (
+    <Modal isOpen={open} onClose={onClose} title="Record Payment">
+      <div className="space-y-4">
+        <div className="flex items-start gap-2 p-3 bg-[#e1e5f2]/50 border border-[#bfdbf7] rounded-xl text-xs text-[#1f7a8c]">
+          <AlertTriangle size={12} className="mt-0.5 flex-shrink-0 text-yellow-500" />
+          Phone must match a registered & approved resident in the system.
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Owner Name *</label>
+            <input value={form.ownerName} onChange={e => set('ownerName', e.target.value)} placeholder="Full name" className="input-field" />
+            <Err f="ownerName" />
+          </div>
+          <div>
+            <label className="label">Phone Number *</label>
+            <input value={form.ownerPhone} onChange={e => set('ownerPhone', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="10-digit mobile" className="input-field font-mono" maxLength={10} />
+            <Err f="ownerPhone" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Paid Amount (₹) *</label>
+            <input type="number" min="1" value={form.paidAmount} onChange={e => set('paidAmount', e.target.value)} placeholder="e.g. 2500" className="input-field font-mono" />
+            <Err f="paidAmount" />
+          </div>
+          <div>
+            <label className="label">Payment Mode *</label>
+            <select value={form.paymentMode} onChange={e => set('paymentMode', e.target.value)} className="input-field">
+              {PAYMENT_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Payment Date *</label>
+            <input type="date" value={form.paymentDate} max={today} onChange={e => set('paymentDate', e.target.value)} className="input-field" />
+            <Err f="paymentDate" />
+          </div>
+          <div>
+            <label className="label">Billing Month *</label>
+            <select value={form.paymentMonth} onChange={e => set('paymentMonth', e.target.value)} className="input-field">
+              {MONTH_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <Err f="paymentMonth" />
+          </div>
+        </div>
+        <div>
+          <label className="label">Transaction ID (optional)</label>
+          <input value={form.transactionId} onChange={e => set('transactionId', e.target.value)} placeholder="UPI/Bank reference" className="input-field font-mono" />
+        </div>
+        <div>
+          <label className="label">Note (optional)</label>
+          <input value={form.description} onChange={e => set('description', e.target.value)} placeholder="e.g. Cash collected at office" className="input-field" />
+        </div>
+        <div
+          onClick={() => set('verifiedByAdmin', !form.verifiedByAdmin)}
+          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none ${
+            form.verifiedByAdmin ? 'bg-green-950/30 border-green-800/50' : 'bg-[#e1e5f2]/30 border-[#bfdbf7]'}`}
+        >
+          <div className={`w-10 h-5 rounded-full relative transition-colors ${form.verifiedByAdmin ? 'bg-green-600' : 'bg-gray-600'}`}>
+            <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.verifiedByAdmin ? 'left-5' : 'left-0.5'}`} />
+          </div>
+          <div className="flex-1">
+            <p className={`text-sm font-medium ${form.verifiedByAdmin ? 'text-green-400' : 'text-[#022b3a]/60'}`}>
+              {form.verifiedByAdmin ? 'Mark as Verified — adds to collection immediately' : 'Leave as Pending Verification'}
+            </p>
+            <p className="text-xs text-[#1f7a8c] mt-0.5">
+              {form.verifiedByAdmin ? 'Dashboard & analytics update right away' : 'Verify later from the payment list'}
+            </p>
+          </div>
+          {form.verifiedByAdmin && <ShieldCheck size={16} className="text-green-400" />}
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+          <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
+            {submitting ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Plus size={14} />}
+            Record Payment
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/* ── Main Component ──────────────────────────────────────────────────── */
+export default function PaymentTracking() {
+  const [payments,      setPayments]     = useState([])
+  const [trackStats,    setTrackStats]   = useState(null)
+  const [loading,       setLoading]      = useState(true)
+  const [refreshing,    setRefreshing]   = useState(false)
+  const [search,        setSearch]       = useState('')
+  const [statusFilter,  setStatusFilter] = useState('')
+  const [methodFilter,  setMethodFilter] = useState('')
+  const [page,          setPage]         = useState(1)
+  const [showAdd,       setShowAdd]      = useState(false)
+  const [rejectModal,   setRejectModal]  = useState(null)
+  const [rejectReason,  setRejectReason] = useState('')
+  const [actionId,      setActionId]     = useState(null)
+  const PER_PAGE = 10
+
+  const fetchAll = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true); else setRefreshing(true)
+    try {
+      const [pmtsRes, statsRes] = await Promise.allSettled([
+        adminAPI.getAllPayments(statusFilter ? { status: statusFilter } : {}),
+        adminAPI.getPaymentTrackingStats ? adminAPI.getPaymentTrackingStats() : Promise.reject(),
+      ])
+      if (pmtsRes.status === 'fulfilled') {
+        const d = pmtsRes.value.data
+        setPayments(Array.isArray(d) ? d : (d?.data ?? []))
+      }
+      if (statsRes.status === 'fulfilled') {
+        const d = statsRes.value.data
+        setTrackStats(d?.data ?? d)
+      }
+    } catch {
+      if (!silent) toast.error('Could not load payments.')
+    } finally { setLoading(false); setRefreshing(false) }
+  }, [statusFilter])
+
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  const handleApprove = async (id) => {
+    setActionId(id)
+    try {
+      await adminAPI.approvePayment(id)
+      toast.success('Payment approved! Analytics updated.')
+      fetchAll(true)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Approval failed')
+    } finally { setActionId(null) }
+  }
+
+  const handleReject = async () => {
+    if (!rejectModal) return
+    setActionId(rejectModal.id)
+    try {
+      await adminAPI.rejectPayment(rejectModal.id, rejectReason)
+      toast.success('Payment rejected.')
+      setRejectModal(null); fetchAll(true)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Rejection failed')
+    } finally { setActionId(null) }
+  }
+
+  const filtered = payments.filter(p => {
+    const q = search.toLowerCase()
+    return ((p.residentName  ?? '').toLowerCase().includes(q) ||
+            (p.flatNumber    ?? '').toLowerCase().includes(q) ||
+            (p.transactionId ?? '').toLowerCase().includes(q) ||
+            (p.paymentMonth  ?? '').includes(q))
+      && (!methodFilter || p.paymentMethod === methodFilter)
+  })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+  // Local fallback stats from payments array when API stats not available
+  const ts = trackStats || null
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
+  const paidLocal    = payments.filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth).length
+  const pendVerif    = payments.filter(p => p.paymentStatus === 'PENDING_VERIFICATION').length
+  const totalCollected = payments
+    .filter(p => p.paymentStatus === 'PAID')
+    .reduce((s, p) => s + (p.amount ?? 0), 0)
+
+  const statsCards = [
+    { label: 'Total Registered',    value: ts?.totalRegisteredOwners ?? payments.length, icon: Users },
+    { label: 'Active Owners',        value: ts?.totalActiveOwners    ?? '—',               icon: UserCheck },
+    { label: 'Paid This Month',      value: ts?.paidOwners           ?? paidLocal,         icon: CheckCircle, green: true },
+    { label: 'Unpaid',               value: ts?.unpaidOwners         ?? '—',               icon: UserX },
+    { label: 'Overdue',              value: ts?.overdueOwners        ?? 0,                 icon: AlertTriangle, red: true },
+    { label: 'Pending Verification', value: ts?.pendingVerification  ?? pendVerif,         icon: Clock, yellow: (ts?.pendingVerification ?? pendVerif) > 0 },
+  ]
+
+  const collPct = ts?.collectionPercentage ?? (paidLocal > 0 && payments.length > 0 ? (paidLocal / payments.length * 100) : 0)
+
+  if (loading) return <PageLoader />
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="section-title text-xl">Payment Tracking</h1>
+          <p className="section-subtitle">
+            Monitor and verify all maintenance payments · {new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => fetchAll(true)} disabled={refreshing} className="btn-secondary flex items-center gap-2 text-sm">
+            <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 text-sm">
+            <Plus size={14} /> Add Payment
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {statsCards.map(({ label, value, icon: Icon, green, red, yellow }) => (
+          <div key={label} className={`card card-hover text-center py-3 px-2 border ${
+            yellow ? 'border-yellow-900/40' : red ? 'border-red-900/40' : 'border-transparent'}`}>
+            <Icon size={16} className={`mx-auto mb-1 ${green ? 'text-green-400' : yellow ? 'text-yellow-400' : red ? 'text-red-400' : 'text-[#022b3a]/40'}`} />
+            <p className={`text-xl font-bold font-mono ${green ? 'text-green-400' : yellow ? 'text-yellow-400' : red ? 'text-red-400' : 'text-[#022b3a]'}`}>
+              {value}
+            </p>
+            <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Collection Rate + Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="card">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-[#022b3a] flex items-center gap-2">
+              <TrendingUp size={14} /> Collection Rate
+            </p>
+            <p className={`text-lg font-bold font-mono ${collPct >= 80 ? 'text-green-400' : collPct >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {collPct.toFixed(1)}%
+            </p>
+          </div>
+          <CollectionBar pct={collPct} />
+          <p className="text-xs text-[#1f7a8c] mt-2">
+            {ts?.paidOwners ?? paidLocal} of {ts?.totalActiveOwners ?? '?'} active owners paid this month
+          </p>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-[#022b3a] flex items-center gap-2">
+              <IndianRupee size={14} /> Monthly Collection
+            </p>
+          </div>
+          <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">
+            {formatCurrency(ts?.totalCollectedThisMonth ?? totalCollected)}
+          </p>
+          {ts?.totalPendingAmount > 0 && (
+            <p className="text-xs text-red-400 mt-1">
+              Pending: {formatCurrency(ts.totalPendingAmount)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Pending verification alert */}
+      {pendVerif > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-yellow-950/20 border border-yellow-900/40 rounded-xl">
+          <Clock size={14} className="text-yellow-400 flex-shrink-0" />
+          <p className="text-sm text-yellow-200">
+            <strong>{pendVerif}</strong> payment{pendVerif > 1 ? 's' : ''} awaiting your verification.
+            Approve to update analytics and generate receipts.
+          </p>
+        </div>
+      )}
+
+      {/* Payments Table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
+          <h2 className="text-sm font-semibold text-[#022b3a]">
+            All Payments
+            <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({filtered.length})</span>
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterSelect value={statusFilter} onChange={v => { setStatusFilter(v); setPage(1) }} options={STATUS_OPTIONS} placeholder="All Status" />
+            <FilterSelect value={methodFilter} onChange={v => { setMethodFilter(v); setPage(1) }} options={PAYMENT_MODES.map(m => ({ value: m.value, label: m.label }))} placeholder="All Methods" />
+            <SearchBar value={search} onChange={v => { setSearch(v); setPage(1) }} placeholder="Name, flat, TXN, month…" />
+          </div>
+        </div>
+
+        {paginated.length === 0 ? (
+          <EmptyState
+            title="No payments found"
+            description={search || statusFilter ? 'Try different filters.' : 'Payments will appear here after residents submit or admin records them.'}
+          />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-[#bfdbf7] bg-white/50">
+                  <tr>
+                    {['Resident','Flat','Amount','Status','Month','Date','Method','TXN ID','Source','Action'].map(h => (
+                      <th key={h} className="table-header text-xs">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(p => (
+                    <tr key={p.id} className="table-row">
+                      <td className="table-cell">
+                        <p className="font-medium text-[#022b3a] text-sm">{p.residentName ?? '—'}</p>
+                      </td>
+                      <td className="table-cell">
+                        <p className="font-mono text-xs">{p.flatNumber ?? '—'}</p>
+                        <p className="text-[10px] text-[#1f7a8c]">{p.flatType ?? ''}</p>
+                      </td>
+                      <td className="table-cell font-mono text-sm text-[#022b3a]">
+                        {formatCurrency(p.amount ?? 0)}
+                        {p.lateFeeAmount > 0 && <p className="text-[10px] text-red-400">+{formatCurrency(p.lateFeeAmount)} late</p>}
+                      </td>
+                      <td className="table-cell"><StatusBadge status={p.paymentStatus} /></td>
+                      <td className="table-cell font-mono text-xs text-[#1f7a8c]">{p.paymentMonth ?? '—'}</td>
+                      <td className="table-cell text-xs text-[#022b3a]/70">{formatDate(p.paymentDate)}</td>
+                      <td className="table-cell"><MethodBadge method={p.paymentMethod} /></td>
+                      <td className="table-cell font-mono text-[10px] text-[#1f7a8c] max-w-[90px] truncate" title={p.transactionId}>{p.transactionId ?? '—'}</td>
+                      <td className="table-cell">
+                        {p.adminCreated
+                          ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#bfdbf7]/60 text-[#1f7a8c]">Admin</span>
+                          : <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e1e5f2] text-[#022b3a]/40">Resident</span>
+                        }
+                      </td>
+                      <td className="table-cell">
+                        {p.paymentStatus === 'PENDING_VERIFICATION' ? (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
+                              className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-green-950/30 text-green-400 hover:bg-green-950/60 border border-green-900/50 disabled:opacity-50 transition-all">
+                              <CheckCircle size={10} /> OK
+                            </button>
+                            <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
+                              className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-red-950/30 text-red-400 hover:bg-red-950/60 border border-red-900/50 disabled:opacity-50 transition-all">
+                              <XCircle size={10} /> No
+                            </button>
+                          </div>
+                        ) : <span className="text-[10px] text-[#022b3a]/20">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-[#bfdbf7]">
+              {paginated.map(p => (
+                <div key={p.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-sm text-[#022b3a]">{p.residentName ?? '—'}</p>
+                      <p className="text-xs text-[#1f7a8c] font-mono mt-0.5">{p.flatNumber ?? '—'} · {p.flatType ?? ''}</p>
+                    </div>
+                    <StatusBadge status={p.paymentStatus} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><p className="text-[#1f7a8c]">Amount</p><p className="font-mono font-semibold text-[#022b3a]">{formatCurrency(p.amount ?? 0)}</p></div>
+                    <div><p className="text-[#1f7a8c]">Month</p><p className="font-mono text-[#022b3a]">{p.paymentMonth ?? '—'}</p></div>
+                    <div><p className="text-[#1f7a8c]">Method</p><MethodBadge method={p.paymentMethod} /></div>
+                    <div><p className="text-[#1f7a8c]">Date</p><p className="text-[#022b3a]">{formatDate(p.paymentDate)}</p></div>
+                  </div>
+                  {p.transactionId && <p className="text-[10px] font-mono text-[#1f7a8c] truncate">TXN: {p.transactionId}</p>}
+                  {p.paymentStatus === 'PENDING_VERIFICATION' && (
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-green-950/30 text-green-400 border border-green-900/50 disabled:opacity-50">
+                        <CheckCircle size={12} /> Approve
+                      </button>
+                      <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-red-950/30 text-red-400 border border-red-900/50 disabled:opacity-50">
+                        <XCircle size={12} /> Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
+        )}
+      </div>
+
+      {/* Reject Modal */}
+      <Modal isOpen={!!rejectModal} onClose={() => setRejectModal(null)} title="Reject Payment">
+        {rejectModal && (
+          <div className="space-y-4">
+            <div className="p-3 bg-white rounded-xl border border-[#bfdbf7] text-sm">
+              <p className="text-[#022b3a]/60">Rejecting payment from <strong className="text-[#022b3a]">{rejectModal.residentName}</strong></p>
+              <p className="text-[#1f7a8c] text-xs mt-1">TXN: {rejectModal.transactionId ?? '—'} · {formatCurrency(rejectModal.amount)} · {rejectModal.paymentMonth}</p>
+            </div>
+            <div>
+              <label className="label">Rejection Reason (optional)</label>
+              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="e.g. Transaction ID not found..." rows={3} className="input-field resize-none" />
+            </div>
+            <p className="text-xs text-[#1f7a8c]">Resident will be notified and payment reverts to PENDING.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setRejectModal(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={handleReject} disabled={!!actionId}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 border border-red-800 text-white text-sm font-medium transition-all disabled:opacity-50">
+                {actionId ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <ShieldX size={13} />}
+                Confirm Reject
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <AddPaymentModal open={showAdd} onClose={() => setShowAdd(false)} onSuccess={() => fetchAll(true)} />
+    </div>
+  )
+}
