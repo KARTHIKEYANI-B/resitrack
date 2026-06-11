@@ -40,6 +40,7 @@ export default function ResidentApprovalPage() {
   const [expanded,     setExpanded]     = useState(new Set())
   const [selected,     setSelected]     = useState(new Set())
   const [pendingCount, setPendingCount] = useState(0)
+  const [totalCount,   setTotalCount]   = useState(0)
 
   // Single reject modal
   const [rejectTarget, setRejectTarget] = useState(null) // resident object
@@ -57,9 +58,10 @@ export default function ResidentApprovalPage() {
   const fetchList = useCallback(async () => {
     setLoading(true)
     try {
-      const [listRes, countRes] = await Promise.allSettled([
+      const [listRes, countRes, allRes] = await Promise.allSettled([
         adminAPI.getAllApprovals({ status: statusFilter }),
         adminAPI.getApprovalCount(),
+        adminAPI.getAllApprovals({ status: 'ALL' }),
       ])
       if (listRes.status === 'fulfilled') {
         const d = listRes.value.data?.data ?? listRes.value.data ?? []
@@ -67,6 +69,10 @@ export default function ResidentApprovalPage() {
       }
       if (countRes.status === 'fulfilled') {
         setPendingCount(countRes.value.data?.data?.pending ?? 0)
+      }
+      if (allRes.status === 'fulfilled') {
+        const d = allRes.value.data?.data ?? allRes.value.data ?? []
+        setTotalCount(Array.isArray(d) ? d.length : 0)
       }
     } catch {
       setList([])
@@ -190,6 +196,20 @@ export default function ResidentApprovalPage() {
         <button onClick={fetchList} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
         </button>
+      </div>
+
+      {/* ── Total Registered Count card (moved from Payment Tracking) ──── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="card card-hover text-center py-3 px-2 border border-transparent">
+          <Users size={16} className="mx-auto mb-1 text-[#022b3a]/40" />
+          <p className="text-xl font-bold font-mono text-[#022b3a]">{totalCount}</p>
+          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Total Registered</p>
+        </div>
+        <div className="card card-hover text-center py-3 px-2 border border-yellow-900/30">
+          <CheckCircle size={16} className="mx-auto mb-1 text-yellow-400" />
+          <p className="text-xl font-bold font-mono text-yellow-400">{pendingCount}</p>
+          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Pending Approval</p>
+        </div>
       </div>
 
       {/* ── Filters row ─────────────────────────────────────── */}

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle, XCircle, Clock, Plus, RefreshCw,
-  Users, UserCheck, UserX, AlertTriangle, TrendingUp,
-  Smartphone, Building2, Banknote, CreditCard,
-  ShieldCheck, ShieldX, Shield, ChevronDown, IndianRupee
+  UserCheck, UserX, AlertTriangle, TrendingUp,
+  Smartphone, Building2, Banknote,
+  ShieldCheck, ShieldX, Shield, IndianRupee
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
@@ -15,7 +15,7 @@ import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
 
-/* ── Constants ───────────────────────────────────────────────────────── */
+/* ── Constants — CARD removed ────────────────────────────────────────── */
 const STATUS_OPTIONS = [
   { value: 'PENDING_VERIFICATION', label: 'Pending Verification' },
   { value: 'PAID',                 label: 'Paid' },
@@ -26,7 +26,6 @@ const PAYMENT_MODES = [
   { value: 'UPI',           label: 'UPI',          icon: Smartphone },
   { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2 },
   { value: 'CASH',          label: 'Cash',          icon: Banknote },
-  { value: 'CARD',          label: 'Card',          icon: CreditCard },
 ]
 const MONTH_OPTIONS = (() => {
   const opts = []; const now = new Date()
@@ -39,6 +38,13 @@ const MONTH_OPTIONS = (() => {
   }
   return opts
 })()
+
+// Full amount formatter — no abbreviated formats
+const fmt = (v) => {
+  const n = Number(v ?? 0)
+  if (isNaN(n)) return '₹0'
+  return '₹\u00A0' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
 
 /* ── Status badge ────────────────────────────────────────────────────── */
 function StatusBadge({ status }) {
@@ -56,10 +62,10 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ── Method badge ────────────────────────────────────────────────────── */
+/* ── Method badge — CARD removed ─────────────────────────────────────── */
 function MethodBadge({ method }) {
-  const map = { UPI: Smartphone, BANK_TRANSFER: Building2, CASH: Banknote, CARD: CreditCard, GPAY: Smartphone }
-  const Icon = map[method] || CreditCard
+  const map = { UPI: Smartphone, BANK_TRANSFER: Building2, CASH: Banknote, GPAY: Smartphone }
+  const Icon = map[method] || Banknote
   return <span className="inline-flex items-center gap-1 text-xs text-[#1f7a8c]"><Icon size={11} />{method || '—'}</span>
 }
 
@@ -74,7 +80,36 @@ function CollectionBar({ pct }) {
   )
 }
 
-/* ── Add Payment Modal ───────────────────────────────────────────────── */
+/* ── Total Collected Amount Card (Bank / Cash breakdown) ─────────────── */
+function BalanceSummaryCard({ totalCollected, bankBalance, cashBalance }) {
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-[#022b3a] flex items-center gap-2">
+          <IndianRupee size={14} /> Total Collected Amount
+        </p>
+      </div>
+      <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">{fmt(totalCollected)}</p>
+      <p className="text-[10px] text-[#1f7a8c] mb-2">Total Collected (this month)</p>
+      <div className="space-y-1 pt-2 border-t border-[#bfdbf7]">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[#1f7a8c] flex items-center gap-1">
+            <Smartphone size={10} /> Bank Collected (UPI + Bank Transfer)
+          </span>
+          <span className="text-xs font-mono font-semibold text-[#022b3a]">{fmt(bankBalance)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[#1f7a8c] flex items-center gap-1">
+            <Banknote size={10} /> Cash Collected
+          </span>
+          <span className="text-xs font-mono font-semibold text-[#022b3a]">{fmt(cashBalance)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Add Payment Modal — CARD removed ───────────────────────────────── */
 function AddPaymentModal({ open, onClose, onSuccess }) {
   const today        = new Date().toISOString().split('T')[0]
   const currentMonth = MONTH_OPTIONS[0]?.value || ''
@@ -114,8 +149,8 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
         description: form.description.trim() || undefined,
       })
       toast.success(form.verifiedByAdmin
-        ? 'Payment recorded & verified. Analytics updated!'
-        : 'Payment recorded. Pending your verification.')
+        ? 'Payment recorded & verified!'
+        : 'Payment recorded. Pending verification.')
       onSuccess(); onClose()
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to record payment'
@@ -132,7 +167,7 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
       <div className="space-y-4">
         <div className="flex items-start gap-2 p-3 bg-[#e1e5f2]/50 border border-[#bfdbf7] rounded-xl text-xs text-[#1f7a8c]">
           <AlertTriangle size={12} className="mt-0.5 flex-shrink-0 text-yellow-500" />
-          Phone must match a registered & approved resident in the system.
+          Phone must match a registered & approved resident.
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -148,57 +183,47 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="label">Paid Amount (₹) *</label>
-            <input type="number" min="1" value={form.paidAmount} onChange={e => set('paidAmount', e.target.value)} placeholder="e.g. 2500" className="input-field font-mono" />
+            <label className="label">Billing Month *</label>
+            <select value={form.paymentMonth} onChange={e => set('paymentMonth', e.target.value)} className="input-field">
+              {MONTH_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <Err f="paymentMonth" />
+          </div>
+          <div>
+            <label className="label">Amount (₹) *</label>
+            <input type="number" value={form.paidAmount} onChange={e => set('paidAmount', e.target.value)} placeholder="e.g. 3500" className="input-field font-mono" min="1" />
             <Err f="paidAmount" />
           </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Payment Mode *</label>
             <select value={form.paymentMode} onChange={e => set('paymentMode', e.target.value)} className="input-field">
               {PAYMENT_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Payment Date *</label>
-            <input type="date" value={form.paymentDate} max={today} onChange={e => set('paymentDate', e.target.value)} className="input-field" />
+            <input type="date" value={form.paymentDate} onChange={e => set('paymentDate', e.target.value)} className="input-field" />
             <Err f="paymentDate" />
-          </div>
-          <div>
-            <label className="label">Billing Month *</label>
-            <select value={form.paymentMonth} onChange={e => set('paymentMonth', e.target.value)} className="input-field">
-              {MONTH_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
-            <Err f="paymentMonth" />
           </div>
         </div>
         <div>
           <label className="label">Transaction ID (optional)</label>
-          <input value={form.transactionId} onChange={e => set('transactionId', e.target.value)} placeholder="UPI/Bank reference" className="input-field font-mono" />
+          <input value={form.transactionId} onChange={e => set('transactionId', e.target.value)} placeholder="UPI ref / bank ref" className="input-field font-mono" />
         </div>
         <div>
-          <label className="label">Note (optional)</label>
-          <input value={form.description} onChange={e => set('description', e.target.value)} placeholder="e.g. Cash collected at office" className="input-field" />
+          <label className="label">Description (optional)</label>
+          <input value={form.description} onChange={e => set('description', e.target.value)} placeholder="Notes" className="input-field" />
         </div>
-        <div
-          onClick={() => set('verifiedByAdmin', !form.verifiedByAdmin)}
-          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none ${
-            form.verifiedByAdmin ? 'bg-green-950/30 border-green-800/50' : 'bg-[#e1e5f2]/30 border-[#bfdbf7]'}`}
-        >
-          <div className={`w-10 h-5 rounded-full relative transition-colors ${form.verifiedByAdmin ? 'bg-green-600' : 'bg-gray-600'}`}>
-            <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${form.verifiedByAdmin ? 'left-5' : 'left-0.5'}`} />
-          </div>
-          <div className="flex-1">
-            <p className={`text-sm font-medium ${form.verifiedByAdmin ? 'text-green-400' : 'text-[#022b3a]/60'}`}>
-              {form.verifiedByAdmin ? 'Mark as Verified — adds to collection immediately' : 'Leave as Pending Verification'}
-            </p>
-            <p className="text-xs text-[#1f7a8c] mt-0.5">
-              {form.verifiedByAdmin ? 'Dashboard & analytics update right away' : 'Verify later from the payment list'}
-            </p>
+        <label className="flex items-center gap-3 p-3 bg-[#e1e5f2]/50 rounded-xl border border-[#bfdbf7] cursor-pointer hover:bg-[#bfdbf7]/40 transition-all">
+          <input type="checkbox" checked={form.verifiedByAdmin} onChange={e => set('verifiedByAdmin', e.target.checked)} className="w-4 h-4 rounded" />
+          <div>
+            <p className="text-xs font-semibold text-[#022b3a]">Mark as verified (auto-approve)</p>
+            <p className="text-[10px] text-[#1f7a8c]">Receipt generated immediately; analytics updated.</p>
           </div>
           {form.verifiedByAdmin && <ShieldCheck size={16} className="text-green-400" />}
-        </div>
+        </label>
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
           <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
@@ -253,7 +278,7 @@ export default function PaymentTracking() {
     setActionId(id)
     try {
       await adminAPI.approvePayment(id)
-      toast.success('Payment approved! Analytics updated.')
+      toast.success('Payment approved! Receipt generated.')
       fetchAll(true)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Approval failed')
@@ -275,31 +300,49 @@ export default function PaymentTracking() {
   const filtered = payments.filter(p => {
     const q = search.toLowerCase()
     return ((p.residentName  ?? '').toLowerCase().includes(q) ||
-            (p.flatNumber    ?? '').toLowerCase().includes(q) ||
-            (p.transactionId ?? '').toLowerCase().includes(q) ||
-            (p.paymentMonth  ?? '').includes(q))
+            (p.flatNumber    ?? '').toLowerCase().includes(q))
       && (!methodFilter || p.paymentMethod === methodFilter)
   })
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
-  // Local fallback stats from payments array when API stats not available
   const ts = trackStats || null
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
   const paidLocal    = payments.filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth).length
   const pendVerif    = payments.filter(p => p.paymentStatus === 'PENDING_VERIFICATION').length
-  const totalCollected = payments
-    .filter(p => p.paymentStatus === 'PAID')
-    .reduce((s, p) => s + (p.amount ?? 0), 0)
+  const totalCollected = ts?.totalCollectedThisMonth ?? payments
+    .filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth)
+    .reduce((s, p) => s + Number(p.amount ?? 0), 0)
+
+  // Bank / Cash collection: always use server-computed values from tracking-stats.
+  // The server sums directly from Payment records (PAID, current calendar month,
+  // paymentDate-based) using the full set of bank methods (UPI, BANK_TRANSFER,
+  // NEFT, RTGS, IMPS, Cheque, Online Banking, etc.).
+  // Local fallback covers only UPI + BANK_TRANSFER so it is intentionally unused
+  // when the server value is available.
+  const bankCollected = ts?.bankCollectedThisMonth ?? payments
+    .filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth
+              && p.paymentMethod && p.paymentMethod.toUpperCase() !== 'CASH')
+    .reduce((s, p) => s + Number(p.amount ?? 0), 0)
+  const cashCollected = ts?.cashCollectedThisMonth ?? payments
+    .filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth
+              && p.paymentMethod && p.paymentMethod.toUpperCase() === 'CASH')
+    .reduce((s, p) => s + Number(p.amount ?? 0), 0)
+
+  // ── Task 1: Annual Pending Dues ──────────────────────────────────────────
+  // annualPendingDues = totalExpectedYTD − totalCollectedYTD
+  // Backend computes: activeOwners × maintAmount × completedMonths − actualCollectedJan–prevMonth
+  const annualPendingDues = ts?.annualPendingDues ?? ts?.totalPendingAmount ?? 0
+  const totalExpectedYTD  = ts?.totalExpectedYTD  ?? 0
+  const totalCollectedYTD = ts?.totalCollectedYTD ?? 0
 
   const statsCards = [
-    { label: 'Total Registered',    value: ts?.totalRegisteredOwners ?? payments.length, icon: Users },
-    { label: 'Active Owners',        value: ts?.totalActiveOwners    ?? '—',               icon: UserCheck },
-    { label: 'Paid This Month',      value: ts?.paidOwners           ?? paidLocal,         icon: CheckCircle, green: true },
-    { label: 'Unpaid',               value: ts?.unpaidOwners         ?? '—',               icon: UserX },
-    { label: 'Overdue',              value: ts?.overdueOwners        ?? 0,                 icon: AlertTriangle, red: true },
-    { label: 'Pending Verification', value: ts?.pendingVerification  ?? pendVerif,         icon: Clock, yellow: (ts?.pendingVerification ?? pendVerif) > 0 },
+    { label: 'Active Owners',        value: ts?.totalActiveOwners   ?? '—',         icon: UserCheck },
+    { label: 'Paid This Month',      value: ts?.paidOwners          ?? paidLocal,   icon: CheckCircle, green: true },
+    { label: 'Unpaid',               value: ts?.unpaidOwners        ?? '—',         icon: UserX },
+    { label: 'Overdue',              value: ts?.overdueOwners       ?? 0,           icon: AlertTriangle, red: true },
+    { label: 'Pending Verification', value: ts?.pendingVerification ?? pendVerif,   icon: Clock, yellow: (ts?.pendingVerification ?? pendVerif) > 0 },
   ]
 
   const collPct = ts?.collectionPercentage ?? (paidLocal > 0 && payments.length > 0 ? (paidLocal / payments.length * 100) : 0)
@@ -328,7 +371,7 @@ export default function PaymentTracking() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {statsCards.map(({ label, value, icon: Icon, green, red, yellow }) => (
           <div key={label} className={`card card-hover text-center py-3 px-2 border ${
             yellow ? 'border-yellow-900/40' : red ? 'border-red-900/40' : 'border-transparent'}`}>
@@ -341,7 +384,7 @@ export default function PaymentTracking() {
         ))}
       </div>
 
-      {/* Collection Rate + Summary */}
+      {/* Collection Rate + Total Collected Amount */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="card">
           <div className="flex items-center justify-between mb-2">
@@ -357,21 +400,13 @@ export default function PaymentTracking() {
             {ts?.paidOwners ?? paidLocal} of {ts?.totalActiveOwners ?? '?'} active owners paid this month
           </p>
         </div>
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#022b3a] flex items-center gap-2">
-              <IndianRupee size={14} /> Monthly Collection
-            </p>
-          </div>
-          <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">
-            {formatCurrency(ts?.totalCollectedThisMonth ?? totalCollected)}
-          </p>
-          {ts?.totalPendingAmount > 0 && (
-            <p className="text-xs text-red-400 mt-1">
-              Pending: {formatCurrency(ts.totalPendingAmount)}
-            </p>
-          )}
-        </div>
+
+        {/* Total Collected Amount with Bank / Cash breakdown */}
+        <BalanceSummaryCard
+          totalCollected={ts?.totalCollectedThisMonth ?? totalCollected}
+          bankBalance={bankCollected}
+          cashBalance={cashCollected}
+        />
       </div>
 
       {/* Pending verification alert */}
@@ -380,7 +415,6 @@ export default function PaymentTracking() {
           <Clock size={14} className="text-yellow-400 flex-shrink-0" />
           <p className="text-sm text-yellow-200">
             <strong>{pendVerif}</strong> payment{pendVerif > 1 ? 's' : ''} awaiting your verification.
-            Approve to update analytics and generate receipts.
           </p>
         </div>
       )}
@@ -395,7 +429,7 @@ export default function PaymentTracking() {
           <div className="flex flex-wrap items-center gap-2">
             <FilterSelect value={statusFilter} onChange={v => { setStatusFilter(v); setPage(1) }} options={STATUS_OPTIONS} placeholder="All Status" />
             <FilterSelect value={methodFilter} onChange={v => { setMethodFilter(v); setPage(1) }} options={PAYMENT_MODES.map(m => ({ value: m.value, label: m.label }))} placeholder="All Methods" />
-            <SearchBar value={search} onChange={v => { setSearch(v); setPage(1) }} placeholder="Name, flat, TXN, month…" />
+            <SearchBar value={search} onChange={v => { setSearch(v); setPage(1) }} placeholder="Name or flat…" />
           </div>
         </div>
 
@@ -408,10 +442,10 @@ export default function PaymentTracking() {
           <>
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Resident','Flat','Amount','Status','Month','Date','Method','TXN ID','Source','Action'].map(h => (
+                    {['Resident', 'Flat', 'Amount', 'Status', 'Date', 'Method', 'Verify'].map(h => (
                       <th key={h} className="table-header text-xs">{h}</th>
                     ))}
                   </tr>
@@ -427,30 +461,22 @@ export default function PaymentTracking() {
                         <p className="text-[10px] text-[#1f7a8c]">{p.flatType ?? ''}</p>
                       </td>
                       <td className="table-cell font-mono text-sm text-[#022b3a]">
-                        {formatCurrency(p.amount ?? 0)}
-                        {p.lateFeeAmount > 0 && <p className="text-[10px] text-red-400">+{formatCurrency(p.lateFeeAmount)} late</p>}
+                        {fmt(p.amount ?? 0)}
+                        {p.lateFeeAmount > 0 && <p className="text-[10px] text-red-400">+{fmt(p.lateFeeAmount)} late</p>}
                       </td>
                       <td className="table-cell"><StatusBadge status={p.paymentStatus} /></td>
-                      <td className="table-cell font-mono text-xs text-[#1f7a8c]">{p.paymentMonth ?? '—'}</td>
                       <td className="table-cell text-xs text-[#022b3a]/70">{formatDate(p.paymentDate)}</td>
                       <td className="table-cell"><MethodBadge method={p.paymentMethod} /></td>
-                      <td className="table-cell font-mono text-[10px] text-[#1f7a8c] max-w-[90px] truncate" title={p.transactionId}>{p.transactionId ?? '—'}</td>
-                      <td className="table-cell">
-                        {p.adminCreated
-                          ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#bfdbf7]/60 text-[#1f7a8c]">Admin</span>
-                          : <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e1e5f2] text-[#022b3a]/40">Resident</span>
-                        }
-                      </td>
                       <td className="table-cell">
                         {p.paymentStatus === 'PENDING_VERIFICATION' ? (
                           <div className="flex items-center gap-1">
                             <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
                               className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-green-950/30 text-green-400 hover:bg-green-950/60 border border-green-900/50 disabled:opacity-50 transition-all">
-                              <CheckCircle size={10} /> OK
+                              <CheckCircle size={10} /> Approve
                             </button>
                             <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
                               className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-red-950/30 text-red-400 hover:bg-red-950/60 border border-red-900/50 disabled:opacity-50 transition-all">
-                              <XCircle size={10} /> No
+                              <XCircle size={10} /> Reject
                             </button>
                           </div>
                         ) : <span className="text-[10px] text-[#022b3a]/20">—</span>}
@@ -473,12 +499,10 @@ export default function PaymentTracking() {
                     <StatusBadge status={p.paymentStatus} />
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><p className="text-[#1f7a8c]">Amount</p><p className="font-mono font-semibold text-[#022b3a]">{formatCurrency(p.amount ?? 0)}</p></div>
-                    <div><p className="text-[#1f7a8c]">Month</p><p className="font-mono text-[#022b3a]">{p.paymentMonth ?? '—'}</p></div>
+                    <div><p className="text-[#1f7a8c]">Amount</p><p className="font-mono font-semibold text-[#022b3a]">{fmt(p.amount ?? 0)}</p></div>
                     <div><p className="text-[#1f7a8c]">Method</p><MethodBadge method={p.paymentMethod} /></div>
                     <div><p className="text-[#1f7a8c]">Date</p><p className="text-[#022b3a]">{formatDate(p.paymentDate)}</p></div>
                   </div>
-                  {p.transactionId && <p className="text-[10px] font-mono text-[#1f7a8c] truncate">TXN: {p.transactionId}</p>}
                   {p.paymentStatus === 'PENDING_VERIFICATION' && (
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
@@ -506,11 +530,11 @@ export default function PaymentTracking() {
           <div className="space-y-4">
             <div className="p-3 bg-white rounded-xl border border-[#bfdbf7] text-sm">
               <p className="text-[#022b3a]/60">Rejecting payment from <strong className="text-[#022b3a]">{rejectModal.residentName}</strong></p>
-              <p className="text-[#1f7a8c] text-xs mt-1">TXN: {rejectModal.transactionId ?? '—'} · {formatCurrency(rejectModal.amount)} · {rejectModal.paymentMonth}</p>
+              <p className="text-[#1f7a8c] text-xs mt-1">{fmt(rejectModal.amount)} · {rejectModal.paymentMonth}</p>
             </div>
             <div>
               <label className="label">Rejection Reason (optional)</label>
-              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="e.g. Transaction ID not found..." rows={3} className="input-field resize-none" />
+              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="e.g. Payment reference not found..." rows={3} className="input-field resize-none" />
             </div>
             <p className="text-xs text-[#1f7a8c]">Resident will be notified and payment reverts to PENDING.</p>
             <div className="flex gap-3">

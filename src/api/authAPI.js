@@ -6,10 +6,8 @@ export const authAPI = {
   register:                (data)  => axiosInstance.post('/auth/register',     data),
   validateRegNo:           (regNo) => axiosInstance.get(`/auth/validate-register-number/${regNo}`),
 
-  // Public — for pending approval page auto-refresh
   getRegistrationStatus:   (email) => axiosInstance.get(`/auth/registration-status/${encodeURIComponent(email)}`),
 
-  // Password change
   changeAdminPassword:     (data)  => axiosInstance.put('/auth/admin/change-password', data),
   changeResidentPassword:  (data)  => axiosInstance.put('/auth/user/change-password',  data),
 }

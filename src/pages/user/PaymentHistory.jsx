@@ -31,7 +31,7 @@ export default function PaymentHistory() {
 
   const filtered = payments.filter(p =>
     p.transactionId?.toLowerCase().includes(search.toLowerCase()) ||
-    p.month?.toLowerCase().includes(search.toLowerCase())
+    p.paymentMonth?.toLowerCase().includes(search.toLowerCase())
   )
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
@@ -49,9 +49,9 @@ export default function PaymentHistory() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Paid',      value: formatCurrency(totalPaid) },
-          { label: 'Total Payments',  value: payments.length },
-          { label: 'This Year',       value: payments.filter(p => p.paymentDate?.startsWith(new Date().getFullYear())).length },
+          { label: 'Total Paid',     value: formatCurrency(totalPaid) },
+          { label: 'Total Payments', value: payments.length },
+          { label: 'This Year',      value: payments.filter(p => p.paymentDate?.startsWith(new Date().getFullYear())).length },
         ].map(({ label, value }) => (
           <div key={label} className="card card-hover text-center py-4">
             <p className="text-lg font-bold text-[#022b3a] font-mono">{value}</p>
@@ -76,14 +76,21 @@ export default function PaymentHistory() {
         </div>
 
         {paginated.length === 0 ? (
-          <EmptyState title="No payment records found" description="Your payment history will appear here after your first payment" />
+          <EmptyState
+            title="No payment records found"
+            description="Your payment history will appear here after your first payment"
+          />
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Month', 'Payment Date', 'Amount', 'Late Fee', 'Method', 'Transaction ID', 'Status'].map(h => (
+                    {/*
+                      REQUIREMENT: 'Month' column removed from All Transactions table.
+                      Remaining columns: Payment Date, Amount, Late Fee, Method, Transaction ID, Status
+                    */}
+                    {['Payment Date', 'Amount', 'Late Fee', 'Method', 'Transaction ID', 'Status'].map(h => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>
@@ -91,11 +98,13 @@ export default function PaymentHistory() {
                 <tbody>
                   {paginated.map((p) => (
                     <tr key={p.id} className="table-row">
-                      <td className="table-cell font-medium text-[#022b3a]">{p.month}</td>
+                      {/* Month column removed */}
                       <td className="table-cell">{formatDate(p.paymentDate)}</td>
                       <td className="table-cell font-mono text-[#022b3a]">{formatCurrency(p.amount)}</td>
                       <td className="table-cell font-mono text-xs">
-                        {p.lateFee > 0 ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span> : <span className="text-[#022b3a]">—</span>}
+                        {p.lateFee > 0
+                          ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span>
+                          : <span className="text-[#022b3a]">—</span>}
                       </td>
                       <td className="table-cell">{p.paymentMethod}</td>
                       <td className="table-cell font-mono text-xs text-[#1f7a8c]">{p.transactionId}</td>

@@ -1,31 +1,28 @@
 import { useState, useEffect } from 'react'
-import { Save, Settings as SettingsIcon, Building2, DollarSign, Lock } from 'lucide-react'
+import { Save, Building2, DollarSign, Lock } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
+// General tab REMOVED from TABS array
 const TABS = [
-  { key: 'general',   label: 'General',        icon: SettingsIcon },
   { key: 'fees',      label: 'Fees & Penalty',  icon: DollarSign },
-  { key: 'apartment', label: 'Apartment Info',  icon: Building2 },
-  { key: 'password',  label: 'Change Password', icon: Lock },
+  { key: 'apartment', label: 'Apartment Info',   icon: Building2 },
+  { key: 'password',  label: 'Change Password',  icon: Lock },
 ]
 
 export default function AdminSettings() {
-  const [activeTab, setActiveTab] = useState('general')
+  // Default first tab is now 'fees' (General removed)
+  const [activeTab, setActiveTab] = useState('fees')
   const [loading, setLoading]     = useState(true)
   const [saving, setSaving]       = useState(false)
 
-  const [general, setGeneral] = useState({
-    maintenanceAmount: '', dueDate: '10', recurringCycle: 'Monthly',
-    currencyFormat: 'INR', receiptFooter: 'Thank you for your timely payment.',
-  })
   const [fees, setFees] = useState({
     penaltyPercentage: '5', lateFeeAmount: '100', gracePeriod: '5',
   })
   const [apartment, setApartment] = useState({
     apartmentName: 'R R Dhurya Owners Welfare Association',
-    address: '', contactPhone: '', contactEmail: '', totalFlats: '60',
+    address: '', contactPhone: '', contactEmail: '',
   })
   const [passwords, setPasswords] = useState({
     currentPassword: '', newPassword: '', confirmPassword: '',
@@ -33,15 +30,15 @@ export default function AdminSettings() {
   const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false })
 
   useEffect(() => {
-    // Check if ?tab=password is in URL
+    // Support ?tab=password deep-link
     const params = new URLSearchParams(window.location.search)
-    if (params.get('tab') === 'password') setActiveTab('password')
+    const tab = params.get('tab')
+    if (tab && TABS.some(t => t.key === tab)) setActiveTab(tab)
 
     const load = async () => {
       try {
         const res = await adminAPI.getSettings()
         const s   = res.data?.data || res.data
-        if (s?.general)   setGeneral(s.general)
         if (s?.fees)      setFees(s.fees)
         if (s?.apartment) setApartment(s.apartment)
       } catch {}
@@ -50,16 +47,15 @@ export default function AdminSettings() {
     load()
   }, [])
 
-  const saveGeneral = async () => {
+  const saveSettings = async () => {
     setSaving(true)
     try {
-      await adminAPI.updateSettings({ general, fees, apartment })
+      await adminAPI.updateSettings({ fees, apartment })
       toast.success('Settings saved successfully')
     } catch { toast.error('Could not save settings') }
     finally { setSaving(false) }
   }
 
-  // FIX #2: Use adminAPI.changePassword which calls /auth/admin/change-password
   const changePassword = async () => {
     if (!passwords.currentPassword || !passwords.newPassword) {
       toast.error('Fill all password fields'); return
@@ -99,10 +95,10 @@ export default function AdminSettings() {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div>
         <h1 className="section-title text-xl">Settings</h1>
-        <p className="section-subtitle">Configure global parameters and system preferences</p>
+        <p className="section-subtitle">Configure fees, apartment details, and account security</p>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation — General tab REMOVED */}
       <div className="flex gap-1 bg-white border border-[#bfdbf7] rounded-xl p-1.5">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
@@ -114,42 +110,7 @@ export default function AdminSettings() {
         ))}
       </div>
 
-      {/* General Tab */}
-      {activeTab === 'general' && (
-        <div className="card space-y-5">
-          <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Global Parameters</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <FieldGroup label="Monthly Maintenance Amount (₹)">
-              <Input value={general.maintenanceAmount} placeholder="e.g. 3000"
-                onChange={e => setGeneral({ ...general, maintenanceAmount: e.target.value })} />
-            </FieldGroup>
-            <FieldGroup label="Payment Due Day (day of month)">
-              <Input value={general.dueDate} placeholder="e.g. 10"
-                onChange={e => setGeneral({ ...general, dueDate: e.target.value })} />
-            </FieldGroup>
-            <FieldGroup label="Recurring Cycle">
-              <select value={general.recurringCycle} className="input-field"
-                onChange={e => setGeneral({ ...general, recurringCycle: e.target.value })}>
-                {['Monthly','Quarterly','Yearly'].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </FieldGroup>
-            <FieldGroup label="Currency Format">
-              <select value={general.currencyFormat} className="input-field"
-                onChange={e => setGeneral({ ...general, currencyFormat: e.target.value })}>
-                <option value="INR">₹ Indian Rupees (INR)</option>
-              </select>
-            </FieldGroup>
-            <FieldGroup label="Receipt Footer Text">
-              <textarea value={general.receiptFooter} rows={2}
-                onChange={e => setGeneral({ ...general, receiptFooter: e.target.value })}
-                className="input-field resize-none col-span-2" />
-            </FieldGroup>
-          </div>
-          <SaveButton onClick={saveGeneral} saving={saving} />
-        </div>
-      )}
-
-      {/* Fees Tab */}
+      {/* Fees & Penalty Tab */}
       {activeTab === 'fees' && (
         <div className="card space-y-5">
           <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Fees & Penalty Configuration</h2>
@@ -167,11 +128,11 @@ export default function AdminSettings() {
                 onChange={e => setFees({ ...fees, gracePeriod: e.target.value })} />
             </FieldGroup>
           </div>
-          <SaveButton onClick={saveGeneral} saving={saving} />
+          <SaveButton onClick={saveSettings} saving={saving} />
         </div>
       )}
 
-      {/* Apartment Tab */}
+      {/* Apartment Info Tab */}
       {activeTab === 'apartment' && (
         <div className="card space-y-5">
           <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Apartment Details</h2>
@@ -198,11 +159,11 @@ export default function AdminSettings() {
               </FieldGroup>
             </div>
           </div>
-          <SaveButton onClick={saveGeneral} saving={saving} />
+          <SaveButton onClick={saveSettings} saving={saving} />
         </div>
       )}
 
-      {/* FIX #2: Change Password Tab */}
+      {/* Change Password Tab */}
       {activeTab === 'password' && (
         <div className="card space-y-5">
           <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Change Admin Password</h2>

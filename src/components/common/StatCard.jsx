@@ -5,11 +5,11 @@ export default function StatCard({ icon: Icon, label, value, sub, iconBg = 'bg-g
         <div>
           <p className="stat-label">{label}</p>
           <p className="stat-value mt-1">{value}</p>
-          {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
+          {sub && <p className="text-xs mt-1" style={{ color: 'var(--rt-muted)' }}>{sub}</p>}
         </div>
         {Icon && (
           <div className={`stat-icon ${iconBg}`}>
-            <Icon size={18} className="text-gray-400" />
+            <Icon size={18} style={{ color: 'var(--rt-muted)' }} />
           </div>
         )}
       </div>

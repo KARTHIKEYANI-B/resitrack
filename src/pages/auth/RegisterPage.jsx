@@ -1,335 +1,380 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Building2, CheckCircle, XCircle, ChevronLeft, Home, Landmark } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Eye, EyeOff, Building2, User, Mail, Phone,
+  Home, Ruler, Users, Car, MapPin, Lock,
+  CheckCircle, ArrowLeft, AlertCircle, ChevronDown
+} from 'lucide-react'
 import { authAPI } from '../../api/authAPI'
 import toast from 'react-hot-toast'
 
-/* ─── password strength ──────────────────────────────────────── */
-const RULES = [
-  { label: 'At least 8 characters',     test: (p) => p.length >= 8 },
-  { label: 'One uppercase letter (A-Z)', test: (p) => /[A-Z]/.test(p) },
-  { label: 'One lowercase letter (a-z)', test: (p) => /[a-z]/.test(p) },
-  { label: 'One number (0-9)',           test: (p) => /[0-9]/.test(p) },
-  { label: 'One special character',      test: (p) => /[^A-Za-z0-9]/.test(p) },
-]
-function getStrength(pw) {
-  const met = RULES.filter(r => r.test(pw)).length
-  if (!pw)  return { met, level: 0, label: '',       bar: 'w-0' }
-  if (met <= 2) return { met, level: 1, label: 'Weak',   bar: 'w-1/3',  barColor: 'bg-red-500' }
-  if (met <= 3) return { met, level: 2, label: 'Medium', bar: 'w-2/3',  barColor: 'bg-yellow-500' }
-  if (met === 4) return { met, level: 3, label: 'Good',   bar: 'w-4/5',  barColor: 'bg-blue-500' }
-  return              { met, level: 4, label: 'Strong',  bar: 'w-full', barColor: 'bg-green-500' }
+const P = {
+  primary: '#007979', secondary: '#24B1B1',
+  bg: '#FFF0E4', accent: '#FFE0C5', border: '#E8C9AB',
+  dark: '#1a2e2e', muted: '#6b8080', surface: '#FFFAF5',
+}
+
+const FLAT_TYPES = ['1BHK', '2BHK', '3BHK', '4BHK', 'Villa', 'Penthouse', 'Studio', 'Duplex', 'Other']
+
+function StrengthBar({ password }) {
+  const calc = (p) => {
+    let s = 0
+    if (p.length >= 8)           s++
+    if (/[A-Z]/.test(p))         s++
+    if (/[0-9]/.test(p))         s++
+    if (/[^A-Za-z0-9]/.test(p))  s++
+    return s
+  }
+  const score  = calc(password)
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
+  const colors = ['', 'bg-red-400', 'bg-yellow-400', 'bg-teal-400', 'bg-green-500']
+  const text   = ['', 'text-red-500', 'text-yellow-600', 'text-teal-600', 'text-green-600']
+  if (!password) return null
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= score ? colors[score] : 'bg-[#E8C9AB]'}`} />
+        ))}
+      </div>
+      <p className={`text-[11px] font-medium ${text[score]}`}>{labels[score]}</p>
+    </div>
+  )
+}
+
+function StepDots({ current, total }) {
+  return (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} className={`rounded-full transition-all duration-300 ${
+          i < current ? 'w-6 h-2' : i === current ? 'w-8 h-2' : 'w-2 h-2'
+        }`} style={{
+          background: i <= current ? P.primary : P.border,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function Field({ label, icon: Icon, error, children }) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="relative">
+        {Icon && (
+          <Icon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+            style={{ color: P.secondary }} />
+        )}
+        {children}
+      </div>
+      {error && (
+        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+          <AlertCircle size={10} />{error}
+        </p>
+      )}
+    </div>
+  )
 }
 
 const INIT = {
-  fullName: '', email: '', phone: '',
-  flatType: 'Flat', sqFt: '', flatNumber: '',
-  familyMembers: '', vehicleDetails: '', address: '',
-  password: '', confirmPassword: '',
+  fullName: '', email: '', phone: '', password: '', confirmPassword: '',
+  age: '',
+  flatNumber: '', flatType: '', propertyType: '', squareFeet: '', familyMembers: '',
+  vehicleDetails: '', address: '',
 }
 
 export default function RegisterPage() {
-  const [form,        setForm]        = useState(INIT)
-  const [showPass,    setShowPass]    = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [errors,      setErrors]      = useState({})
+  const [form,    setForm]    = useState(INIT)
+  const [showPw,  setShowPw]  = useState(false)
+  const [showCpw, setShowCpw] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [step,    setStep]    = useState(0)
+  const [errors,  setErrors]  = useState({})
   const navigate = useNavigate()
-  const strength = getStrength(form.password)
 
-  const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }))
-    setErrors(e => ({ ...e, [k]: '' }))
-  }
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); if (errors[k]) setErrors(e => ({ ...e, [k]: '' })) }
 
-  /* ── Client-side validation ────────────────────────────────── */
-  const validate = () => {
+  const validateStep0 = () => {
     const e = {}
-    if (!form.fullName.trim())   e.fullName   = 'Full name is required'
-    if (!form.email.trim())      e.email      = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email format'
-    if (!form.phone.trim())      e.phone      = 'Phone number is required'
-    else if (!/^[+]?[0-9]{10,13}$/.test(form.phone.replace(/\s/g,'')))
-                                 e.phone      = 'Enter a valid phone number'
-    if (!form.flatType)          e.flatType   = 'Property type is required'
-    if (!form.sqFt)              e.sqFt       = 'Square feet is required'
-    else if (isNaN(+form.sqFt) || +form.sqFt < 100) e.sqFt = 'Enter valid square feet (min 100)'
-    if (!form.flatNumber.trim()) e.flatNumber = 'Flat/Villa number is required'
-    if (!form.password)          e.password   = 'Password is required'
-    else if (strength.level < 2) e.password   = 'Password is too weak'
-    if (!form.confirmPassword)       e.confirmPassword = 'Please confirm your password'
+    if (!form.fullName.trim())          e.fullName = 'Full name is required'
+    if (!form.email.trim())             e.email = 'Email is required'
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email'
+    if (!form.phone.trim())             e.phone = 'Phone is required'
+    else if (!/^\d{10}$/.test(form.phone.replace(/\s/g, ''))) e.phone = '10-digit number required'
+    if (!form.password)                 e.password = 'Password is required'
+    else if (form.password.length < 8)  e.password = 'At least 8 characters required'
+    if (!form.confirmPassword)          e.confirmPassword = 'Confirm your password'
     else if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match'
-    setErrors(e)
-    return Object.keys(e).length === 0
+    return e
   }
 
-  /* ── Submit ─────────────────────────────────────────────────── */
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validate()) { toast.error('Please fix the highlighted errors'); return }
+  const validateStep1 = () => {
+    const e = {}
+    if (!form.propertyType)          e.propertyType = 'Select Flat or Villa'
+    if (!form.flatNumber.trim())     e.flatNumber   = 'Flat/Villa number is required'
+    if (!form.flatType)              e.flatType     = 'Unit type is required'
+    if (!form.address.trim())        e.address      = 'Address is required'
+    return e
+  }
+
+  const goNext = () => {
+    const e = step === 0 ? validateStep0() : {}
+    if (Object.keys(e).length > 0) { setErrors(e); return }
+    setErrors({}); setStep(s => s + 1)
+  }
+
+  const goBack = () => { setErrors({}); setStep(s => s - 1) }
+
+  const handleSubmit = async () => {
+    const e = validateStep1()
+    if (Object.keys(e).length > 0) { setErrors(e); return }
+
     setLoading(true)
     try {
       await authAPI.register({
-        fullName:      form.fullName.trim(),
-        email:         form.email.trim().toLowerCase(),
-        phone:         form.phone.trim(),
-        flatType:      form.flatType,
-        sqFt:          parseFloat(form.sqFt),
-        flatNumber:    form.flatNumber.trim(),
-        familyMembers: form.familyMembers ? parseInt(form.familyMembers) : null,
-        vehicleDetails:form.vehicleDetails.trim() || null,
-        address:       form.address.trim() || null,
-        password:      form.password,
+        fullName:       form.fullName.trim(),
+        email:          form.email.trim().toLowerCase(),
+        phone:          form.phone.trim(),
+        password:       form.password,
+        age:            form.age ? Number(form.age) : null,
+        flatNumber:     form.flatNumber.trim().toUpperCase(),
+        flatType:       form.flatType,
+        propertyType:   form.propertyType,          // "FLAT" | "VILLA"
+        sqFt:           form.squareFeet ? Number(form.squareFeet) : null,
+        familyMembers:  form.familyMembers ? Number(form.familyMembers) : null,
+        vehicleDetails: form.vehicleDetails.trim() || null,
+        address:        form.address.trim(),
       })
-      toast.success('Registration submitted! Awaiting admin approval.')
-      // Redirect to pending approval page with email in query params
-      navigate(`/pending-approval?email=${encodeURIComponent(form.email.trim().toLowerCase())}`)
+      setStep(2)
     } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed. Try again.'
-      // Handle specific duplicate errors
-      if (msg.toLowerCase().includes('email'))      setErrors(er => ({ ...er, email: msg }))
-      else if (msg.toLowerCase().includes('phone')) setErrors(er => ({ ...er, phone: msg }))
-      else if (msg.toLowerCase().includes('flat'))  setErrors(er => ({ ...er, flatNumber: msg }))
-      else toast.error(msg)
+      const msg = err.response?.data?.message || 'Registration failed. Please try again.'
+      toast.error(msg)
     } finally { setLoading(false) }
   }
 
-  const F = ({ label, name, type = 'text', placeholder, required = true, hint }) => (
-    <div>
-      <label className="label">
-        {label}{required && <span className="text-[#1f7a8c] ml-0.5">*</span>}
-      </label>
-      <input
-        type={type} value={form[name]} placeholder={placeholder}
-        onChange={e => set(name, e.target.value)}
-        className={`input-field ${errors[name] ? 'border-red-700' : ''}`}
-      />
-      {errors[name] && <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><XCircle size={10}/>{errors[name]}</p>}
-      {hint && !errors[name] && <p className="text-[10px] text-[#1f7a8c] mt-1">{hint}</p>}
+  // ── Success screen ────────────────────────────────────────────────────
+  if (step === 2) return (
+    <div className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: `linear-gradient(135deg, ${P.bg} 0%, #fff8f0 100%)` }}>
+      <div className="w-full max-w-md text-center space-y-5 animate-fade-in">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
+          style={{ background: '#dcfce7', border: '1px solid #86efac' }}>
+          <CheckCircle size={32} className="text-green-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold" style={{ color: P.dark }}>Registration Submitted!</h2>
+          <p className="text-sm mt-2 leading-relaxed max-w-xs mx-auto" style={{ color: P.muted }}>
+            Your request has been sent to the admin for review. You'll be able to log in once approved.
+          </p>
+        </div>
+        <div className="rounded-2xl p-4 text-left space-y-2"
+          style={{ background: P.surface, border: `1px solid ${P.border}` }}>
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: P.primary }}>What happens next?</p>
+          {['Admin reviews your registration details', 'You receive approval notification', 'Log in with your credentials'].map((s, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: P.primary }}>{i + 1}</span>
+              <p className="text-xs" style={{ color: P.body }}>{s}</p>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => navigate('/login')} className="btn-primary w-full py-3 font-semibold">
+          Go to Login
+        </button>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#f0f4f8] flex items-center justify-center p-4 py-12">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#bfdbf720_1px,transparent_1px),linear-gradient(to_bottom,#bfdbf720_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: `linear-gradient(135deg, ${P.bg} 0%, #fff8f0 100%)` }}>
+      <div className="w-full max-w-md animate-scale-in">
 
-      <div className="w-full max-w-2xl relative z-10 animate-slide-up space-y-6">
+        {/* Brand */}
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2"
+            style={{ background: P.primary, boxShadow: '0 6px 20px rgba(0,121,121,0.28)' }}>
+            <Building2 size={22} color="#fff" />
+          </div>
+          <h1 className="text-lg font-bold" style={{ color: P.dark }}>ResiTrack</h1>
+          <p className="text-xs" style={{ color: P.secondary }}>Resident Registration</p>
+        </div>
 
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="p-2 rounded-lg text-[#1f7a8c] hover:text-[#022b3a] hover:bg-[#e1e5f2] transition-all">
-            <ChevronLeft size={18} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
-                <Building2 size={14} className="text-[#022b3a]" />
+        {/* Card */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ background: P.surface, border: `1px solid ${P.border}`, boxShadow: '0 4px 20px rgba(0,121,121,0.10)' }}>
+          <div className="px-5 sm:px-7 pt-6 pb-2">
+            <StepDots current={step} total={2} />
+            <p className="text-center text-xs mb-5" style={{ color: P.secondary }}>
+              Step {step + 1} of 2 — {step === 0 ? 'Personal Details' : 'Property Information'}
+            </p>
+
+            {/* ── Step 0: Personal ── */}
+            {step === 0 && (
+              <div className="space-y-4 pb-5">
+                <Field label="Full Name *" icon={User} error={errors.fullName}>
+                  <input value={form.fullName} onChange={e => set('fullName', e.target.value)}
+                    placeholder="Your full name"
+                    className={`input-field pl-9 ${errors.fullName ? 'border-red-300' : ''}`} />
+                </Field>
+
+                <Field label="Email Address *" icon={Mail} error={errors.email}>
+                  <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
+                    placeholder="you@example.com" autoComplete="email"
+                    className={`input-field pl-9 ${errors.email ? 'border-red-300' : ''}`} />
+                </Field>
+
+                <Field label="Phone Number *" icon={Phone} error={errors.phone}>
+                  <input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
+                    placeholder="10-digit mobile number"
+                    className={`input-field pl-9 ${errors.phone ? 'border-red-300' : ''}`} />
+                </Field>
+
+                <Field label="Age" icon={Users}>
+                  <input type="number" value={form.age} min="1" max="120"
+                    onChange={e => set('age', e.target.value)}
+                    placeholder="e.g. 35" className="input-field pl-9" />
+                </Field>
+
+                <Field label="Password *" icon={Lock} error={errors.password}>
+                  <input type={showPw ? 'text' : 'password'} value={form.password}
+                    onChange={e => set('password', e.target.value)} placeholder="At least 8 characters"
+                    className={`input-field pl-9 pr-10 ${errors.password ? 'border-red-300' : ''}`} />
+                  <button type="button" onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-3" style={{ color: P.secondary }}>
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                  <StrengthBar password={form.password} />
+                </Field>
+
+                <Field label="Confirm Password *" icon={Lock} error={errors.confirmPassword}>
+                  <input type={showCpw ? 'text' : 'password'} value={form.confirmPassword}
+                    onChange={e => set('confirmPassword', e.target.value)} placeholder="Re-enter password"
+                    className={`input-field pl-9 pr-10 ${errors.confirmPassword ? 'border-red-300' : ''}`} />
+                  <button type="button" onClick={() => setShowCpw(!showCpw)}
+                    className="absolute right-3 top-3" style={{ color: P.secondary }}>
+                    {showCpw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </Field>
               </div>
-              <h1 className="text-lg font-bold text-[#022b3a]">Resident Registration</h1>
-            </div>
-            <p className="text-xs text-[#1f7a8c] mt-0.5">
-              R R Dhurya Owners Welfare Association · Admin approval required
+            )}
+
+            {/* ── Step 1: Property info ── */}
+            {step === 1 && (
+              <div className="space-y-4 pb-5">
+
+                {/* ── NEW: mandatory Flat vs Villa selector ── */}
+                <Field label="Property Category *" error={errors.propertyType}>
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    {['FLAT', 'VILLA'].map(t => (
+                      <button key={t} type="button"
+                        onClick={() => set('propertyType', t)}
+                        className="py-3 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          border: `1.5px solid ${form.propertyType === t ? P.primary : P.border}`,
+                          background: form.propertyType === t ? P.primary : '#fff',
+                          color: form.propertyType === t ? '#fff' : P.dark,
+                        }}>
+                        {t === 'FLAT' ? '🏢 Flat' : '🏡 Villa'}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Flat/Villa Number *" icon={Home} error={errors.flatNumber}>
+                    <input value={form.flatNumber}
+                      onChange={e => set('flatNumber', e.target.value.toUpperCase())}
+                      placeholder="e.g. A101"
+                      className={`input-field pl-9 uppercase ${errors.flatNumber ? 'border-red-300' : ''}`} />
+                  </Field>
+
+                  <Field label="Unit Type *" error={errors.flatType}>
+                    <div className="relative">
+                      <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                        style={{ color: P.secondary }} />
+                      <select value={form.flatType} onChange={e => set('flatType', e.target.value)}
+                        className={`input-field pr-8 appearance-none ${errors.flatType ? 'border-red-300' : ''}`}
+                        style={{ background: '#fff' }}>
+                        <option value="">Select type</option>
+                        {FLAT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Square Feet" icon={Ruler}>
+                    <input type="number" value={form.squareFeet}
+                      onChange={e => set('squareFeet', e.target.value)}
+                      placeholder="e.g. 1200" className="input-field pl-9" />
+                  </Field>
+                  <Field label="Family Members" icon={Users}>
+                    <input type="number" value={form.familyMembers}
+                      onChange={e => set('familyMembers', e.target.value)}
+                      placeholder="e.g. 4" className="input-field pl-9" />
+                  </Field>
+                </div>
+
+                <Field label="Vehicle Number" icon={Car}>
+                  <input value={form.vehicleDetails}
+                    onChange={e => set('vehicleDetails', e.target.value.toUpperCase())}
+                    placeholder="MH01 AB 1234 (optional)" className="input-field pl-9 uppercase" />
+                </Field>
+
+                <Field label="Address *" icon={MapPin} error={errors.address}>
+                  <textarea value={form.address} onChange={e => set('address', e.target.value)}
+                    placeholder="Full residential address" rows={2}
+                    className={`input-field pl-9 resize-none ${errors.address ? 'border-red-300' : ''}`}
+                    style={{ paddingTop: '0.625rem' }} />
+                </Field>
+
+                <div className="rounded-xl p-3 flex gap-2"
+                  style={{ background: 'rgba(0,121,121,0.06)', border: `1px solid rgba(0,121,121,0.15)` }}>
+                  <AlertCircle size={13} className="flex-shrink-0 mt-0.5" style={{ color: P.primary }} />
+                  <p className="text-[11px] leading-relaxed" style={{ color: P.primary }}>
+                    Your registration will be reviewed by the admin before you can log in.
+                    Ensure all details match the apartment records.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="px-5 sm:px-7 pb-6 pt-1 space-y-3"
+            style={{ borderTop: `1px solid ${P.border}`, background: P.accent + '60' }}>
+            {step === 0 && (
+              <button onClick={goNext} className="btn-primary w-full py-3 font-semibold">
+                Continue →
+              </button>
+            )}
+            {step === 1 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={goBack}
+                  className="btn-secondary flex items-center justify-center gap-2 flex-1 order-2 sm:order-1">
+                  <ArrowLeft size={14} />Back
+                </button>
+                <button onClick={handleSubmit} disabled={loading}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2 order-1 sm:order-2 py-3 font-semibold">
+                  {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  {loading ? 'Submitting…' : 'Submit Registration'}
+                </button>
+              </div>
+            )}
+            <p className="text-center text-xs" style={{ color: P.muted }}>
+              Already registered?{' '}
+              <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: P.primary }}>
+                Sign in here
+              </Link>
             </p>
           </div>
         </div>
 
-        <div className="card border-[#bfdbf7]">
-          <form onSubmit={handleSubmit} noValidate>
-
-            {/* ── Section 1: Personal Info ──────────────────────── */}
-            <Section title="Personal Information">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <F label="Full Name" name="fullName" placeholder="As on property documents" />
-                </div>
-                <F label="Email Address" name="email" type="email" placeholder="your@email.com"
-                   hint="You'll use this to log in after approval" />
-                <div>
-                  <label className="label">Phone Number <span className="text-[#1f7a8c]">*</span></label>
-                  <div className="flex gap-2">
-                    <span className="input-field w-14 text-[#1f7a8c] text-center flex-shrink-0 cursor-default">+91</span>
-                    <input type="tel" value={form.phone} placeholder="98765 43210"
-                      onChange={e => set('phone', e.target.value)}
-                      className={`input-field flex-1 ${errors.phone ? 'border-red-700' : ''}`} />
-                  </div>
-                  {errors.phone && <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><XCircle size={10}/>{errors.phone}</p>}
-                </div>
-              </div>
-            </Section>
-
-            {/* ── Section 2: Property Details ───────────────────── */}
-            <Section title="Property Details">
-              {/* Property Type toggle */}
-              <div>
-                <label className="label">Property Type <span className="text-[#1f7a8c]">*</span></label>
-                <div className="flex gap-3">
-                  {[
-                    { value: 'Flat',  icon: Home,     desc: 'Apartment / Flat' },
-                    { value: 'Villa', icon: Landmark,  desc: 'Independent Villa' },
-                  ].map(({ value, icon: Icon, desc }) => (
-                    <button
-                      key={value} type="button"
-                      onClick={() => set('flatType', value)}
-                      className={`flex items-center gap-3 flex-1 p-3 rounded-xl border text-left transition-all ${
-                        form.flatType === value
-                          ? 'border-[#bfdbf7] bg-[#e1e5f2]'
-                          : 'border-[#bfdbf7] bg-[#e1e5f2]/30 hover:bg-[#e1e5f2]'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        form.flatType === value ? 'bg-white' : 'bg-[#bfdbf7]'
-                      }`}>
-                        <Icon size={16} className={form.flatType === value ? 'text-[#022b3a]' : 'text-[#022b3a]/60'} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-[#022b3a]">{value}</p>
-                        <p className="text-[10px] text-[#1f7a8c]">{desc}</p>
-                      </div>
-                      {form.flatType === value && (
-                        <CheckCircle size={15} className="text-[#022b3a] ml-auto" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {errors.flatType && <p className="text-[10px] text-red-400 mt-1">{errors.flatType}</p>}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <F label={`${form.flatType} Number`} name="flatNumber"
-                   placeholder={form.flatType === 'Villa' ? 'e.g. V-12 or Plot-5' : 'e.g. A-101, Flat 204'}
-                   hint="Unique number identifying your property" />
-                <div>
-                  <label className="label">Square Feet <span className="text-[#1f7a8c]">*</span></label>
-                  <div className="relative">
-                    <input type="number" value={form.sqFt} placeholder="e.g. 1200"
-                      onChange={e => set('sqFt', e.target.value)}
-                      className={`input-field pr-14 ${errors.sqFt ? 'border-red-700' : ''}`}
-                      min="100" step="1" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#1f7a8c]">sq.ft</span>
-                  </div>
-                  {errors.sqFt && <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><XCircle size={10}/>{errors.sqFt}</p>}
-                </div>
-                <F label="Family Members Count" name="familyMembers" type="number"
-                   placeholder="e.g. 4" required={false} />
-                <F label="Vehicle Details" name="vehicleDetails"
-                   placeholder="e.g. TN01AB1234 (Car), KA05XY9900 (Bike)"
-                   required={false} hint="Optional — list all vehicles" />
-                <div className="sm:col-span-2">
-                  <F label="Full Address" name="address"
-                     placeholder="Full apartment address (optional)" required={false} />
-                </div>
-              </div>
-            </Section>
-
-            {/* ── Section 3: Password ───────────────────────────── */}
-            <Section title="Set Password">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Password <span className="text-[#1f7a8c]">*</span></label>
-                  <div className="relative">
-                    <input type={showPass ? 'text' : 'password'} value={form.password}
-                      placeholder="Create a strong password"
-                      onChange={e => set('password', e.target.value)}
-                      className={`input-field pr-10 ${errors.password ? 'border-red-700' : ''}`} />
-                    <button type="button" onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1f7a8c] hover:text-[#022b3a]">
-                      {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                  {/* Strength bar */}
-                  {form.password && (
-                    <div className="mt-2">
-                      <div className="h-1.5 bg-[#e1e5f2] rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all duration-300 ${strength.bar} ${strength.barColor}`} />
-                      </div>
-                      <p className={`text-[10px] mt-1 ${
-                        strength.level === 4 ? 'text-green-400' :
-                        strength.level === 3 ? 'text-blue-400' :
-                        strength.level === 2 ? 'text-yellow-400' : 'text-red-400'
-                      }`}>{strength.label} password</p>
-                    </div>
-                  )}
-                  {errors.password && <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><XCircle size={10}/>{errors.password}</p>}
-                </div>
-
-                <div>
-                  <label className="label">Confirm Password <span className="text-[#1f7a8c]">*</span></label>
-                  <div className="relative">
-                    <input type={showConfirm ? 'text' : 'password'} value={form.confirmPassword}
-                      placeholder="Re-enter password"
-                      onChange={e => set('confirmPassword', e.target.value)}
-                      className={`input-field pr-10 ${errors.confirmPassword ? 'border-red-700' : ''}`} />
-                    <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1f7a8c] hover:text-[#022b3a]">
-                      {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                  {form.confirmPassword && (
-                    form.password === form.confirmPassword
-                      ? <p className="text-[10px] text-green-400 mt-1 flex items-center gap-1"><CheckCircle size={10}/>Passwords match</p>
-                      : <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><XCircle size={10}/>Passwords do not match</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Password rules */}
-              <div className="mt-4 p-3 bg-[#e1e5f2]/40 rounded-xl border border-[#bfdbf7]/50 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {RULES.map(({ label, test }) => {
-                  const met = form.password ? test(form.password) : false
-                  return (
-                    <div key={label} className="flex items-center gap-2">
-                      {met
-                        ? <CheckCircle size={11} className="text-green-500 flex-shrink-0" />
-                        : <XCircle    size={11} className="text-[#022b3a] flex-shrink-0" />}
-                      <span className={`text-[11px] ${met ? 'text-green-400' : 'text-[#1f7a8c]'}`}>{label}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </Section>
-
-            {/* ── Info banner ───────────────────────────────────── */}
-            <div className="mt-5 p-4 bg-white/60 rounded-xl border border-[#bfdbf7]/50 flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-[#e1e5f2] flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs text-[#022b3a]/60 font-bold">i</span>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-[#022b3a]">Admin Approval Required</p>
-                <p className="text-[11px] text-[#1f7a8c] mt-0.5 leading-relaxed">
-                  After submitting, your registration will be reviewed by the admin.
-                  You'll receive a notification once approved or if more information is needed.
-                  Typical approval time is 1–2 business days.
-                </p>
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full mt-5 h-11 flex items-center justify-center gap-2">
-              {loading
-                ? <><div className="w-4 h-4 border-2 border-[#bfdbf7] border-t-gray-900 rounded-full animate-spin" />Submitting...</>
-                : 'Submit Registration'}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-[#1f7a8c] mt-4">
-            Already registered?{' '}
-            <Link to="/login" className="text-[#022b3a]/60 hover:text-[#022b3a] underline underline-offset-2">
-              Login here
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-[10px] mt-4" style={{ color: P.muted }}>
+          © {new Date().getFullYear()} ResiTrack · Secure Resident Management
+        </p>
       </div>
-    </div>
-  )
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="mb-6">
-      <h3 className="text-xs font-semibold text-[#1f7a8c] uppercase tracking-widest mb-4 pb-2 border-b border-[#bfdbf7]">
-        {title}
-      </h3>
-      {children}
     </div>
   )
 }

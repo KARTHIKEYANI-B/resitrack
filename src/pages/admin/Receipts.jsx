@@ -10,7 +10,7 @@ import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate, formatDateTime } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
 
-/* ── Month label from YYYY-MM ────────────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────────────────── */
 function monthDisplay(ym) {
   if (!ym) return '—'
   const [y, m] = ym.split('-')
@@ -18,144 +18,212 @@ function monthDisplay(ym) {
     .toLocaleString('en-IN', { month: 'long', year: 'numeric' })
 }
 
-/* ── Full receipt layout (print-ready) ──────────────────────────────── */
-function ReceiptLayout({ receipt }) {
+export function ReceiptLayout({ receipt }) {
   if (!receipt) return null
-  const late  = receipt.lateFeeAmount ?? 0
-  const total = receipt.totalAmount   ?? (receipt.paidAmount + late)
+  const late  = Number(receipt.lateFeeAmount ?? 0)
+  const paid  = Number(receipt.paidAmount ?? 0)
+  const total = Number(receipt.totalAmount ?? (paid + late))
+
+  const rows = [
+    ['Receipt No.',     receipt.receiptNumber ?? '—'],
+    ['Owner Name',      receipt.residentName  ?? '—'],
+    ['Flat / Villa',    receipt.flatNumber     ?? '—'],
+    ['Property Type',   receipt.flatType       ?? '—'],
+    ['Phone',           receipt.residentPhone  ?? '—'],
+    ['Payment Date',    formatDate(receipt.paymentDate)],
+    ['Billing Period',  monthDisplay(receipt.paymentMonth)],
+    ['Payment Mode',    receipt.paymentMethod  ?? '—'],
+  ]
 
   return (
-    <div id="receipt-preview" className="bg-white text-[#022b3a] rounded-xl p-6 sm:p-8 font-sans text-sm">
-      {/* Header */}
-      <div className="text-center border-b-2 border-[#bfdbf7] pb-5 mb-5">
-        <div className="w-12 h-12 bg-[#022b3a] rounded-xl flex items-center justify-center mx-auto mb-3">
-          <FileText size={20} className="text-white" />
+    <div
+      id="receipt-preview"
+      className="mx-auto bg-white font-mono text-[#1a1a1a] rounded-xl shadow-lg"
+      style={{ maxWidth: 360, border: '1px solid #e5e7eb' }}
+    >
+      {/* ── Header ─────────────────────────────────── */}
+      <div className="text-center px-6 pt-7 pb-4">
+        <div className="w-10 h-10 rounded-xl bg-[#022b3a] flex items-center justify-center mx-auto mb-3">
+          <FileText size={18} className="text-white" />
         </div>
-        <h2 className="text-lg font-bold text-[#022b3a]">R R Dhurya Owners Welfare Association</h2>
-        <p className="text-xs text-[#1f7a8c] mt-1">Apartment Maintenance Receipt</p>
-        <p className="text-sm font-mono font-bold text-[#022b3a] mt-1">#{receipt.receiptNumber}</p>
+        <p className="text-[11px] font-sans font-semibold text-[#1f7a8c] uppercase tracking-widest mb-1">
+          Payment Receipt
+        </p>
+        <h2 className="text-sm font-sans font-bold text-[#022b3a] leading-snug">
+          R R Dhurya Owners<br />Welfare Association
+        </h2>
+        <p className="text-[11px] text-[#6b7280] mt-1 font-sans">
+          {formatDateTime(receipt.generatedAt)}
+        </p>
       </div>
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6">
-        {[
-          ['Resident Name',  receipt.residentName],
-          ['Flat / Villa',   receipt.flatNumber],
-          ['Property Type',  receipt.flatType || '—'],
-          ['Phone',          receipt.residentPhone || '—'],
-          ['Payment Date',   formatDate(receipt.paymentDate)],
-          ['Billing Month',  monthDisplay(receipt.paymentMonth)],
-          ['Payment Method', receipt.paymentMethod || '—'],
-          ['Transaction ID', receipt.transactionId || '—'],
-          ['Generated On',   formatDateTime(receipt.generatedAt)],
-          ['Receipt Status', 'Verified & Paid'],
-        ].map(([label, value]) => (
-          <div key={label}>
-            <p className="text-[10px] uppercase tracking-wide text-[#1f7a8c]">{label}</p>
-            <p className={`text-xs font-semibold mt-0.5 ${value === 'Verified & Paid' ? 'text-green-600' : 'text-[#022b3a]'}`}>
+      {/* ── Dashed divider ──────────────────────────── */}
+      <Dash />
+
+      {/* ── Owner & payment details ─────────────────── */}
+      <div className="px-6 py-4 space-y-2.5">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between items-start gap-2">
+            <span className="text-[11px] text-[#6b7280] font-sans uppercase tracking-wide whitespace-nowrap">
+              {label}
+            </span>
+            <span className="text-[12px] text-[#022b3a] font-semibold font-sans text-right break-all">
               {value}
-            </p>
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Amount box */}
-      <div className="bg-[#f8fafb] rounded-xl p-4 border border-[#bfdbf7] mb-6">
-        {[
-          ['Maintenance Amount', formatCurrency(receipt.paidAmount), false],
-          ...(late > 0 ? [['Late Fee', formatCurrency(late), true]] : []),
-        ].map(([label, value, red]) => (
-          <div key={label} className="flex justify-between text-xs mb-2">
-            <span className="text-[#1f7a8c]">{label}</span>
-            <span className={`font-semibold ${red ? 'text-red-600' : ''}`}>{value}</span>
+      {/* ── Dashed divider ──────────────────────────── */}
+      <Dash />
+
+      {/* ── Amount breakdown ────────────────────────── */}
+      <div className="px-6 py-4 space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-[#6b7280] font-sans uppercase tracking-wide">Maintenance Amount</span>
+          <span className="text-[13px] font-semibold font-sans text-[#022b3a]">{formatCurrency(paid)}</span>
+        </div>
+        {late > 0 && (
+          <div className="flex justify-between items-center">
+            <span className="text-[11px] text-[#6b7280] font-sans uppercase tracking-wide">Late Fee</span>
+            <span className="text-[13px] font-semibold font-sans text-red-600">{formatCurrency(late)}</span>
           </div>
-        ))}
-        <div className="border-t border-[#bfdbf7] pt-2 mt-2 flex justify-between text-sm font-bold">
-          <span>Total Paid</span>
-          <span>{formatCurrency(total)}</span>
+        )}
+        {/* Dotted subtotal line */}
+        <div className="border-t border-dashed border-[#d1d5db] my-1" />
+        <div className="flex justify-between items-center">
+          <span className="text-[13px] font-bold font-sans text-[#022b3a] uppercase tracking-wide">Total Paid</span>
+          <span className="text-[17px] font-bold font-sans text-[#022b3a]">{formatCurrency(total)}</span>
         </div>
       </div>
 
-      {/* Seal + Signature */}
-      <div className="flex justify-between items-end border-t border-[#bfdbf7] pt-4">
+      {/* ── Dashed divider ──────────────────────────── */}
+      <Dash />
+
+      {/* ── Verification stamp ──────────────────────── */}
+      <div className="px-6 py-4 flex items-center justify-between">
         <div>
-          <div className="w-20 h-8 border-2 border-dashed border-[#bfdbf7] rounded flex items-center justify-center">
-            <span className="text-[9px] text-[#022b3a]/40">APARTMENT SEAL</span>
+          <p className="text-[10px] font-sans text-[#6b7280] uppercase tracking-wider">Status</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <CheckCircle size={14} className="text-green-600" />
+            <span className="text-[13px] font-bold font-sans text-green-700">Verified & Paid</span>
           </div>
         </div>
-        <div className="text-right">
-          <div className="w-28 border-b-2 border-[#bfdbf7] ml-auto mb-1" />
-          <p className="text-[10px] text-[#1f7a8c]">Authorized Signature / Admin</p>
+        {/* Stamp circle */}
+        <div className="w-14 h-14 rounded-full border-2 border-green-600 flex items-center justify-center flex-shrink-0 rotate-[-15deg]">
+          <div className="text-center">
+            <p className="text-[8px] font-bold text-green-700 leading-none">PAID</p>
+            <CheckCircle size={12} className="text-green-600 mx-auto mt-0.5" />
+          </div>
         </div>
       </div>
-      <p className="text-center text-[9px] text-[#022b3a]/40 mt-4">
-        Computer-generated receipt. Valid without physical signature. — {receipt.receiptFooter || 'Thank you for your payment.'}
-      </p>
+
+      {/* ── Footer text ─────────────────────────────── */}
+      <div className="px-6 pb-4 text-center">
+        <p className="text-[10px] font-sans text-[#6b7280] leading-relaxed">
+          {receipt.receiptFooter || 'Thank you for your payment.'}
+        </p>
+      </div>
+
+      {/* ── Barcode-style bottom strip ──────────────── */}
+      <div className="px-6 pb-6">
+        <Dash />
+        <div className="mt-3 flex flex-col items-center gap-1">
+          {/* Barcode bars simulation */}
+          <div className="flex items-end gap-[2px] h-8">
+            {Array.from({ length: 40 }, (_, i) => (
+              <div
+                key={i}
+                className="bg-[#022b3a]"
+                style={{
+                  width: i % 7 === 0 ? 3 : i % 3 === 0 ? 2 : 1,
+                  height: i % 5 === 0 ? 32 : i % 2 === 0 ? 22 : 28,
+                  opacity: 0.7 + (i % 3) * 0.1,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-[9px] font-mono text-[#9ca3af] tracking-widest mt-1">
+            {receipt.receiptNumber}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
 
-const YEAR_OPTIONS = [2026, 2025, 2024].map(y => ({ value: String(y), label: String(y) }))
+function Dash() {
+  return (
+    <div className="px-4">
+      <div className="border-t-2 border-dashed border-[#e5e7eb]" />
+    </div>
+  )
+}
+
+/* ── Admin Receipts Page ─────────────────────────────────────────────── */
+const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => {
+  const y = new Date().getFullYear() - i
+  return { value: y, label: String(y) }
+})
 
 export default function Receipts() {
   const [receipts,  setReceipts]  = useState([])
   const [loading,   setLoading]   = useState(true)
-  const [selected,  setSelected]  = useState(null)
   const [search,    setSearch]    = useState('')
-  const [yearFilter, setYearFilter] = useState('')
+  const [yearFilter,setYear]      = useState('')
   const [page,      setPage]      = useState(1)
+  const [selected,  setSelected]  = useState(null)
   const PER_PAGE = 10
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res  = await adminAPI.getAllReceipts()
+      const res  = await adminAPI.getAllReceipts(yearFilter ? { year: yearFilter } : {})
       const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
       setReceipts(data)
-    } catch {
-      setReceipts([])
-      toast.error('Could not load receipts.')
-    } finally { setLoading(false) }
-  }, [])
+    } catch { toast.error('Could not load receipts') }
+    finally { setLoading(false) }
+  }, [yearFilter])
 
   useEffect(() => { load() }, [load])
-
-  const handlePrint = () => {
-    const content = document.getElementById('receipt-preview')
-    if (!content) return
-    const win = window.open('', '_blank')
-    win.document.write(`<html><head><title>Receipt - ${selected?.receiptNumber}</title>
-      <style>body{font-family:sans-serif;padding:20px;color:#022b3a;}
-      .text-green-600{color:#16a34a;}.text-red-600{color:#dc2626;}</style>
-      </head><body>${content.innerHTML}</body></html>`)
-    win.document.close(); win.print()
-  }
 
   const handleDownload = async (id) => {
     try {
       const res  = await adminAPI.downloadReceipt(id)
       const url  = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
-      const link = document.createElement('a')
-      link.href = url; link.download = `receipt-${id}.pdf`; link.click()
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `receipt-${id}.pdf`
+      a.click()
       URL.revokeObjectURL(url)
-    } catch {
-      toast('Use Print to save as PDF.', { icon: '📄' })
-    }
+    } catch { toast.error('Download failed') }
   }
 
-  const filtered = receipts.filter(r => {
-    const q = search.toLowerCase()
-    const matchSearch =
-      (r.residentName  ?? '').toLowerCase().includes(q) ||
-      (r.receiptNumber ?? '').toLowerCase().includes(q) ||
-      (r.flatNumber    ?? '').toLowerCase().includes(q) ||
-      (r.transactionId ?? '').toLowerCase().includes(q) ||
-      (r.paymentMonth  ?? '').includes(q)
-    const matchYear = !yearFilter || (r.paymentYear ?? '').includes(yearFilter)
-      || (r.generatedAt ?? '').includes(yearFilter)
-    return matchSearch && matchYear
-  })
+  const handlePrint = () => {
+    const content = document.getElementById('receipt-preview')
+    if (!content) return
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>Receipt</title>
+      <style>
+        body{font-family:monospace;background:#fff;display:flex;justify-content:center;padding:20px}
+        *{box-sizing:border-box}
+        @media print{body{padding:0}}
+      </style>
+      </head><body>${content.outerHTML}</body></html>
+    `)
+    win.document.close()
+    win.focus()
+    win.print()
+    win.close()
+  }
 
+  const q        = search.toLowerCase()
+  const filtered = receipts.filter(r =>
+    (r.residentName  ?? '').toLowerCase().includes(q) ||
+    (r.flatNumber    ?? '').toLowerCase().includes(q) ||
+    (r.receiptNumber ?? '').toLowerCase().includes(q)
+  )
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
@@ -163,72 +231,45 @@ export default function Receipts() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="section-title text-xl">Receipts</h1>
-          <p className="section-subtitle">View and verify payment receipts for all residents</p>
+          <p className="section-subtitle">Payment receipts for all verified transactions</p>
         </div>
-        <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm self-start">
+        <button onClick={load} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          { label: 'Total Receipts',  value: receipts.length },
-          { label: 'This Month',      value: receipts.filter(r => {
-              const d = new Date(); const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-              return r.paymentMonth === ym
-            }).length },
-          { label: 'Total Collected', value: formatCurrency(
-              receipts.reduce((s, r) => s + (r.totalAmount ?? r.paidAmount ?? 0), 0)), mono: true },
-        ].map(({ label, value, mono }) => (
-          <div key={label} className="card text-center py-3">
-            <p className={`text-xl font-bold ${mono ? 'font-mono text-base' : ''} text-[#022b3a]`}>{value}</p>
-            <p className="text-xs text-[#1f7a8c] mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Table card */}
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
           <h2 className="text-sm font-semibold text-[#022b3a]">
             All Receipts
-            <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({filtered.length})</span>
+            {receipts.length > 0 && <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({receipts.length})</span>}
           </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <FilterSelect
-              value={yearFilter}
-              onChange={v => { setYearFilter(v); setPage(1) }}
-              options={YEAR_OPTIONS}
-              placeholder="All Years"
-            />
-            <SearchBar
-              value={search}
-              onChange={v => { setSearch(v); setPage(1) }}
-              placeholder="Name, flat, receipt no..."
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <FilterSelect value={yearFilter} onChange={v => { setYear(v); setPage(1) }}
+              options={YEAR_OPTIONS} placeholder="All Years" />
+            <div className="relative">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1f7a8c]" />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                placeholder="Name, flat, receipt no…"
+                className="input-field pl-8 w-52 text-xs" />
+            </div>
           </div>
         </div>
 
         {paginated.length === 0 ? (
-          <EmptyState
-            title="No receipts found"
-            description="Receipts are auto-generated when admin approves a payment."
-            icon={FileText}
-          />
+          <EmptyState title="No receipts found" description="Receipts appear after payments are verified." />
         ) : (
           <>
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Receipt No.', 'Resident', 'Flat', 'Billing Month', 'Amount', 'Late Fee', 'Date', 'Method', 'Actions'].map(h => (
-                      <th key={h} className="table-header text-xs">{h}</th>
+                    {['Receipt No.', 'Owner', 'Flat', 'Billing Month', 'Amount', 'Late Fee', 'Date', 'Method', 'Actions'].map(h => (
+                      <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>
                 </thead>

@@ -7,17 +7,21 @@ import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
-/* ─── constants ─────────────────────────────────────────────── */
+// Full month names for the dropdowns — January through December
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const FULL_MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+]
 const CY     = new Date().getFullYear()
 const YEARS  = Array.from({ length: 5 }, (_, i) => CY - i)
 
 const APARTMENT = 'R R Dhurya Owners Welfare Association'
 
-/* ─── helpers ────────────────────────────────────────────────── */
 const fmt  = (v) => {
   const n = Number(v)
   if (isNaN(n) || n === 0) return '—'
+  // Always full amount — no K, L, M abbreviations
   return '₹\u00A0' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 const fmtN = (v) => {
@@ -39,23 +43,19 @@ const downloadBlob = (blob, filename) => {
   URL.revokeObjectURL(url)
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════════════════════════════════════ */
 export default function AdminFinancialReport() {
   const [tab,        setTab]        = useState('collection')  // 'collection' | 'expenses'
   const [year,       setYear]       = useState(CY)
-  const [startMonth, setStartMonth] = useState(4)
-  const [endMonth,   setEndMonth]   = useState(3)
+  // FIXED: default to full calendar year Jan (1) → Dec (12) so all months work
+  const [startMonth, setStartMonth] = useState(1)
+  const [endMonth,   setEndMonth]   = useState(12)
   const [loading,    setLoading]    = useState(true)
   const [exporting,  setExporting]  = useState(null)
 
-  // Data states
   const [collData,  setCollData]  = useState(null)
   const [expData,   setExpData]   = useState(null)
   const [summary,   setSummary]   = useState(null)
 
-  /* ── fetch ─────────────────────────────────────────────────── */
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -74,7 +74,6 @@ export default function AdminFinancialReport() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  /* ── export ────────────────────────────────────────────────── */
   const handleExport = async (type, format) => {
     const key  = `${type}-${format}`
     setExporting(key)
@@ -92,12 +91,6 @@ export default function AdminFinancialReport() {
     finally { setExporting(null) }
   }
 
-  /* ── derived ───────────────────────────────────────────────── */
-  const monthRange = Array.from(
-    { length: endMonth >= startMonth ? endMonth - startMonth + 1 : 12 - startMonth + 1 + endMonth },
-    (_, i) => { const m = ((startMonth - 1 + i) % 12) + 1; return m }
-  )
-
   if (loading) return <PageLoader />
 
   return (
@@ -106,7 +99,7 @@ export default function AdminFinancialReport() {
       {/* ── Page Header ──────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="section-title text-xl">Financial Report</h1>
+          <h1 className="section-title text-xl">Financial Summary Report</h1>
           <p className="section-subtitle">{APARTMENT}</p>
         </div>
         <button onClick={fetchAll} className="btn-secondary flex items-center gap-2">
@@ -124,20 +117,27 @@ export default function AdminFinancialReport() {
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-[#1f7a8c] whitespace-nowrap">From</label>
-          <select value={startMonth} onChange={e => setStartMonth(+e.target.value)} className="input-field w-28">
-            {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+          {/* REQUIREMENT: Allow filtering from January (1) to December (12) */}
+          <select value={startMonth} onChange={e => setStartMonth(+e.target.value)} className="input-field w-32">
+            {FULL_MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-[#1f7a8c] whitespace-nowrap">To</label>
-          <select value={endMonth} onChange={e => setEndMonth(+e.target.value)} className="input-field w-28">
-            {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+          {/* REQUIREMENT: Allow filtering up to December (12) */}
+          <select value={endMonth} onChange={e => setEndMonth(+e.target.value)} className="input-field w-32">
+            {FULL_MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </div>
+        {/* Quick-select presets */}
         <div className="flex gap-2 ml-auto">
           {[
-            { label: 'Apr–Mar (FY)', s: 4, e: 3 },
-            { label: 'Jan–Dec',      s: 1, e: 12 },
+            { label: 'Jan–Dec (CY)', s: 1,  e: 12 },
+            { label: 'Apr–Mar (FY)', s: 4,  e: 3  },
+            { label: 'Q1 (Jan–Mar)', s: 1,  e: 3  },
+            { label: 'Q2 (Apr–Jun)', s: 4,  e: 6  },
+            { label: 'Q3 (Jul–Sep)', s: 7,  e: 9  },
+            { label: 'Q4 (Oct–Dec)', s: 10, e: 12 },
           ].map(p => (
             <button key={p.label}
               onClick={() => { setStartMonth(p.s); setEndMonth(p.e) }}
@@ -153,7 +153,7 @@ export default function AdminFinancialReport() {
       </div>
 
       {/* ── Summary Cards ────────────────────────────────────── */}
-      <SummaryCards coll={collData} exp={expData} />
+      <SummaryCards coll={collData} exp={expData} summary={summary} />
 
       {/* ── Tab Switch ───────────────────────────────────────── */}
       <div className="flex items-center gap-2">
@@ -185,43 +185,68 @@ export default function AdminFinancialReport() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SUMMARY CARDS
-══════════════════════════════════════════════════════════════════ */
-function SummaryCards({ coll, exp }) {
+function SummaryCards({ coll, exp, summary }) {
   const openBal  = coll?.openingBalance   ?? 0
   const collected= coll?.totalCollected   ?? 0
   const expenses = exp?.totalExpenses?.toNumber?.() ?? Number(exp?.totalExpenses ?? 0)
   const closing  = coll?.closingBalance   ?? (collected - expenses)
   const pending  = coll?.pendingDues      ?? 0
 
+  // Balance Breakdown — sourced from /admin/financial-report/summary
+  // bankBalance = all-time bank collections − all-time bank expenses
+  // cashBalance = all-time cash collections − all-time cash expenses
+  // totalBalance = bankBalance + cashBalance
+  const bankBal  = summary?.bankBalance  ?? 0
+  const cashBal  = summary?.cashBalance  ?? 0
+  const totalBal = bankBal + cashBal
+
   const cards = [
     { label: 'Opening Balance',  value: fmt(openBal),   icon: Wallet,       sub: 'Start of period' },
     { label: 'Total Collected',  value: fmt(collected), icon: TrendingUp,   sub: 'All PAID payments' },
     { label: 'Total Expenses',   value: fmt(expenses),  icon: TrendingDown, sub: 'All expenses' },
     { label: 'Closing Balance',  value: fmt(closing),   icon: IndianRupee,  sub: 'Net balance' },
-    { label: 'Pending Dues',     value: fmt(pending),   icon: Users,        sub: 'Estimated unpaid' },
+    { label: 'Outstanding Dues',  value: fmt(pending),   icon: Users,        sub: 'Estimated unpaid amount' },
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
-      {cards.map(({ label, value, icon: Icon, sub }) => (
-        <div key={label} className="card card-hover py-4 text-center">
-          <div className="w-7 h-7 rounded-lg bg-[#e1e5f2] flex items-center justify-center mx-auto mb-2">
-            <Icon size={14} className="text-[#022b3a]/60" />
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+        {cards.map(({ label, value, icon: Icon, sub }) => (
+          <div key={label} className="card card-hover py-4 text-center">
+            <div className="w-7 h-7 rounded-lg bg-[#e1e5f2] flex items-center justify-center mx-auto mb-2">
+              <Icon size={14} className="text-[#022b3a]/60" />
+            </div>
+            <p className="text-base font-bold text-[#022b3a] font-mono leading-tight">{value}</p>
+            <p className="text-[11px] font-medium text-[#022b3a]/60 mt-0.5">{label}</p>
+            <p className="text-[10px] text-[#1f7a8c]">{sub}</p>
           </div>
-          <p className="text-base font-bold text-[#022b3a] font-mono leading-tight">{value}</p>
-          <p className="text-[11px] font-medium text-[#022b3a]/60 mt-0.5">{label}</p>
-          <p className="text-[10px] text-[#1f7a8c]">{sub}</p>
+        ))}
+      </div>
+      {/* Balance breakdown — all three values from /admin/financial-report/summary */}
+      <div className="card py-3 px-4">
+        <p className="text-xs font-semibold text-[#022b3a] uppercase tracking-wide mb-2">Balance Breakdown</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <p className="text-[10px] text-[#1f7a8c] mb-0.5">Total Balance</p>
+            <p className="text-sm font-bold font-mono text-[#022b3a]">{fmt(totalBal)}</p>
+            <p className="text-[9px] text-[#1f7a8c]">Bank + Cash (all time)</p>
+          </div>
+          <div className="text-center border-x border-[#bfdbf7]">
+            <p className="text-[10px] text-[#1f7a8c] mb-0.5">Bank Balance</p>
+            <p className="text-sm font-bold font-mono text-[#022b3a]">{fmt(bankBal)}</p>
+            <p className="text-[9px] text-[#1f7a8c]">Collections − Expenses (all time)</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] text-[#1f7a8c] mb-0.5">Cash Balance</p>
+            <p className="text-sm font-bold font-mono text-[#022b3a]">{fmt(cashBal)}</p>
+            <p className="text-[9px] text-[#1f7a8c]">Collections − Expenses (all time)</p>
+          </div>
         </div>
-      ))}
+      </div>
     </div>
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   COLLECTION REPORT — matches the "Coll Sum" Excel sheet
-══════════════════════════════════════════════════════════════════ */
 function CollectionReport({ data, year, onExport, exporting }) {
   const tableRef = useRef(null)
 
@@ -250,7 +275,7 @@ function CollectionReport({ data, year, onExport, exporting }) {
 
       {/* Matrix Table — scrollable horizontally */}
       <div className="card p-0 overflow-hidden">
-        {/* Report Header (bank statement style) */}
+        {/* Report Header */}
         <div className="border-b border-[#bfdbf7] px-5 py-4 text-center bg-white/60">
           <p className="text-sm font-bold text-[#022b3a] tracking-wide uppercase">{APARTMENT}</p>
           <p className="text-xs text-[#022b3a]/60 mt-0.5">Collection Statement — {year}</p>
@@ -292,7 +317,7 @@ function CollectionReport({ data, year, onExport, exporting }) {
                   {monthKeys.map(key => {
                     const amt = row.months?.[key] ?? 0
                     return (
-                      <td key={key} className={`report-td text-right font-mono ${Number(amt) > 0 ? 'text-[#022b3a]' : 'text-[#022b3a]'}`}>
+                      <td key={key} className="report-td text-right font-mono text-[#022b3a]">
                         {Number(amt) > 0 ? fmt(amt) : '—'}
                       </td>
                     )
@@ -326,15 +351,15 @@ function CollectionReport({ data, year, onExport, exporting }) {
         {/* Statement Footer */}
         <div className="border-t border-[#bfdbf7] p-4 grid grid-cols-2 sm:grid-cols-5 gap-0">
           {[
-            { label: 'Opening Balance',  value: data.openingBalance },
-            { label: '+ Total Collected',value: data.totalCollected },
-            { label: '− Total Expenses', value: data.totalExpenses  },
-            { label: 'Closing Balance',  value: data.closingBalance, highlight: true },
-            { label: 'Pending Dues',     value: data.pendingDues    },
+            { label: 'Opening Balance',   value: data.openingBalance },
+            { label: '+ Total Collected', value: data.totalCollected },
+            { label: '− Total Expenses',  value: data.totalExpenses  },
+            { label: 'Closing Balance',   value: data.closingBalance, highlight: true },
+            { label: 'Pending Dues',      value: data.pendingDues    },
           ].map(({ label, value, highlight }) => (
             <div key={label} className={`px-4 py-3 ${highlight ? 'bg-[#e1e5f2] rounded-lg' : ''}`}>
               <p className={`text-[10px] uppercase tracking-wide font-medium ${highlight ? 'text-[#022b3a]' : 'text-[#1f7a8c]'}`}>{label}</p>
-              <p className={`text-sm font-bold font-mono mt-0.5 ${highlight ? 'text-[#022b3a]' : 'text-[#022b3a]'}`}>{fmt(value)}</p>
+              <p className={`text-sm font-bold font-mono mt-0.5 text-[#022b3a]`}>{fmt(value)}</p>
             </div>
           ))}
         </div>
@@ -343,9 +368,6 @@ function CollectionReport({ data, year, onExport, exporting }) {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   EXPENSE REPORT — matches the monthly expense Excel sheets
-══════════════════════════════════════════════════════════════════ */
 function ExpenseReport({ data, onExport, exporting }) {
   const [catOpen, setCatOpen] = useState(false)
 
@@ -465,13 +487,13 @@ function ExpenseReport({ data, onExport, exporting }) {
             </div>
           </div>
 
-          {/* Bank Statement Summary — exactly like the Excel */}
+          {/* Bank Statement Summary */}
           <div className="p-4">
             <p className="text-xs font-semibold text-[#022b3a] uppercase tracking-wide mb-3">Bank Summary</p>
             <div className="space-y-0">
               {[
-                { label: 'Opening Balance',   value: openingBalance, border: true },
-                { label: '+ By Bank Transfer',value: totalIncome },
+                { label: 'Opening Balance',    value: openingBalance, border: true },
+                { label: '+ By Bank Transfer', value: totalIncome },
                 { label: 'Total Income',       value: Number(openingBalance) + Number(totalIncome), bold: true },
                 { label: '− Cheque Expenses',  value: totalCheque },
                 { label: '− Cash Expenses',    value: totalCash },
@@ -494,7 +516,6 @@ function ExpenseReport({ data, onExport, exporting }) {
   )
 }
 
-/* ── Export Button ────────────────────────────────────────────── */
 function ExportBtn({ label, type, format, onExport, exporting }) {
   const key     = `${type}-${format}`
   const loading = exporting === key

@@ -1,17 +1,27 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import axiosInstance from '../api/axios'
 
 const AuthContext = createContext(null)
 
+const TOKEN_KEY = 'resitrack_token'
+const USER_KEY  = 'resitrack_user'
+
+/**
+ * Read from localStorage first (persisted "remember me" session),
+ * then fall back to sessionStorage (current-tab session only).
+ * This ensures both storage strategies work correctly.
+ */
+function readStored(key) {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key)
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null)
-  const [token, setToken]     = useState(() => localStorage.getItem('resitrack_token'))
+  const [user,    setUser]    = useState(null)
+  const [token,   setToken]   = useState(() => readStored(TOKEN_KEY))
   const [loading, setLoading] = useState(true)
 
-  // Restore session on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('resitrack_token')
-    const savedUser  = localStorage.getItem('resitrack_user')
+    const savedToken = readStored(TOKEN_KEY)
+    const savedUser  = readStored(USER_KEY)
     if (savedToken && savedUser) {
       try {
         setToken(savedToken)
@@ -23,25 +33,49 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = useCallback((tokenValue, userData) => {
-    localStorage.setItem('resitrack_token', tokenValue)
-    localStorage.setItem('resitrack_user', JSON.stringify(userData))
+  /**
+   * login(tokenValue, userData, rememberMe)
+   *
+   * rememberMe = true  → localStorage  (survives browser close/restart)
+   * rememberMe = false → sessionStorage (cleared when tab/window closes)
+   *
+   * Defaults to false. Existing call sites that don't pass the flag
+   * continue to work exactly as before.
+   */
+  const login = useCallback((tokenValue, userData, rememberMe = false) => {
+    // Always clear both stores first to avoid stale cross-store data
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
+
+    const store = rememberMe ? localStorage : sessionStorage
+    store.setItem(TOKEN_KEY, tokenValue)
+    store.setItem(USER_KEY, JSON.stringify(userData))
     setToken(tokenValue)
     setUser(userData)
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('resitrack_token')
-    localStorage.removeItem('resitrack_user')
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
   }, [])
 
-  const isAdmin = user?.role === 'ADMIN'
-  const isUser  = user?.role === 'USER'
+  const isAdmin        = user?.role === 'ADMIN'
+  const isUser         = user?.role === 'USER'
+  const isSuperAdmin   = user?.role === 'ADMIN' && user?.superAdmin === true
+  const isOwner        = user?.role === 'USER' && (user?.residentRole === 'OWNER' || !user?.residentRole)
+  const isFamilyMember = user?.role === 'USER' && user?.residentRole === 'FAMILY_MEMBER'
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, isAdmin, isUser }}>
+    <AuthContext.Provider value={{
+      user, token, login, logout, loading,
+      isAdmin, isUser, isSuperAdmin, isOwner, isFamilyMember,
+    }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,81 +1,140 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, User, ChevronDown, LogOut, Edit2, Eye, Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { userAPI } from '../../api/userAPI'
 import toast from 'react-hot-toast'
+
+const P = { primary: '#007979', secondary: '#24B1B1', accent: '#FFE0C5', border: '#E8C9AB', dark: '#1a2e2e', body: '#2d4040', muted: '#6b8080', surface: '#FFFAF5' }
+
+const BTN_T = 'background-color 0.14s ease, transform 0.16s cubic-bezier(0.34,1.56,0.64,1)'
 
 export default function UserNavbar({ sidebarWidth = 240, isMobile = false, onMenuClick }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [unreadCount,  setUnreadCount]  = useState(0)
   const { user, logout }                = useAuth()
   const navigate                        = useNavigate()
   const dropdownRef                     = useRef(null)
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
-        setDropdownOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await userAPI.getUnreadNotificationCount()
+      setUnreadCount(res.data?.data?.count ?? 0)
+    } catch {}
   }, [])
 
-  const handleLogout = () => {
-    logout()
-    toast.success('Logged out successfully')
-    navigate('/login')
-  }
+  useEffect(() => {
+    fetchUnread()
+    const id = setInterval(fetchUnread, 30_000)
+    return () => clearInterval(id)
+  }, [fetchUnread])
+
+  useEffect(() => {
+    const fn = e => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false) }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
 
   return (
     <header
-      className="fixed top-0 right-0 z-20 h-16 bg-white/90 backdrop-blur border-b border-cyan-200 flex items-center justify-between px-3 sm:px-6 shadow-sm"
-      style={{ left: isMobile ? 0 : sidebarWidth, transition: 'left 0.3s' }}
+      className="fixed top-0 right-0 z-20 h-16 flex items-center justify-between px-3 sm:px-6"
+      style={{
+        left: isMobile ? 0 : sidebarWidth,
+        transition: 'left 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
+        background: 'rgba(255,250,245,0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: `1px solid ${P.border}`,
+        boxShadow: '0 1px 12px rgba(0,121,121,0.06)',
+      }}
     >
-      {/* Left */}
       <div className="flex items-center gap-3">
         {isMobile && (
           <button
             onClick={onMenuClick}
-            className="p-2 rounded-lg text-sky-600 hover:bg-cyan-100 transition-colors"
-            aria-label="Open menu"
+            className="p-2 rounded-xl"
+            style={{ color: P.primary, transition: BTN_T }}
+            onMouseEnter={e => { e.currentTarget.style.background = P.accent; e.currentTarget.style.transform = 'scale(1.1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'scale(1)' }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.9)' }}
           >
             <Menu size={20} />
           </button>
         )}
-        <span className="text-[10px] font-semibold text-sky-600 uppercase tracking-widest hidden sm:block">
+        <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block" style={{ color: P.secondary }}>
           Resident Portal
         </span>
       </div>
 
-      {/* Right */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Bell */}
         <button
-          className="relative p-2 rounded-lg text-sky-500 hover:text-blue-900 hover:bg-cyan-100 transition-all"
-          onClick={() => navigate('/user/notifications')}
-          aria-label="Notifications"
+          className="relative p-2 rounded-xl"
+          style={{ color: P.primary, transition: BTN_T }}
+          onClick={() => { navigate('/user/notifications'); setUnreadCount(0) }}
+          onMouseEnter={e => { e.currentTarget.style.background = P.accent; e.currentTarget.style.transform = 'scale(1.1)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'scale(1)' }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.88)' }}
         >
           <Bell size={17} />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none"
+              style={{ background: P.secondary, animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both, badgePulse 2s ease 0.5s infinite' }}
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
 
+        {/* Profile dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 pl-2 pr-2 sm:pr-3 py-1.5 rounded-lg hover:bg-cyan-100 transition-all"
+            className="flex items-center gap-2 pl-2 pr-2 sm:pr-3 py-1.5 rounded-xl"
+            style={{ transition: 'background-color 0.14s ease' }}
+            onMouseEnter={e => e.currentTarget.style.background = P.accent}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <div className="w-7 h-7 rounded-lg bg-sky-600 flex items-center justify-center">
-              <User size={14} className="text-white" />
+            <div
+              className="w-7 h-7 rounded-xl flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${P.primary} 0%, ${P.secondary} 100%)`,
+                boxShadow: `0 2px 6px rgba(0,121,121,0.25)`,
+                transition: 'transform 0.24s cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <User size={14} color="#fff" />
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-xs font-semibold text-blue-950 leading-none">{user?.name || 'Resident'}</p>
-              <p className="text-[10px] text-sky-500 leading-none mt-0.5">Flat {user?.flatNumber || '—'}</p>
+              <p className="text-xs font-semibold leading-none" style={{ color: P.dark }}>{user?.name || 'Resident'}</p>
+              <p className="text-[10px] leading-none mt-0.5" style={{ color: P.secondary }}>Flat {user?.flatNumber || '—'}</p>
             </div>
-            <ChevronDown size={13} className={`text-sky-400 transition-transform hidden sm:block ${dropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              size={13}
+              className="hidden sm:block"
+              style={{
+                color: P.muted,
+                transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94)',
+              }}
+            />
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-cyan-200 rounded-xl shadow-card-hover overflow-hidden z-50 animate-slide-up">
-              <div className="px-4 py-3 border-b border-cyan-100 bg-cyan-50">
-                <p className="text-xs font-semibold text-blue-950 truncate">{user?.name}</p>
-                <p className="text-[10px] text-sky-500 mt-0.5 truncate">{user?.email}</p>
+            <div
+              className="absolute right-0 top-full mt-2 w-48 rounded-2xl overflow-hidden z-50 animate-dropdown"
+              style={{
+                background: P.surface,
+                border: `1px solid ${P.border}`,
+                boxShadow: '0 12px 40px rgba(0,121,121,0.14), 0 4px 12px rgba(0,0,0,0.06)',
+              }}
+            >
+              <div className="px-4 py-3" style={{ borderBottom: `1px solid ${P.border}`, background: P.accent }}>
+                <p className="text-xs font-bold truncate" style={{ color: P.dark }}>{user?.name}</p>
+                <p className="text-[10px] mt-0.5 truncate" style={{ color: P.secondary }}>{user?.email}</p>
               </div>
               {[
                 { icon: Eye,   label: 'View Profile', action: () => navigate('/user/settings') },
@@ -84,15 +143,27 @@ export default function UserNavbar({ sidebarWidth = 240, isMobile = false, onMen
                 <button
                   key={label}
                   onClick={() => { setDropdownOpen(false); action() }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-blue-900 hover:bg-cyan-50 transition-colors text-left"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left"
+                  style={{
+                    color: P.body,
+                    transition: 'background-color 0.13s ease, padding-left 0.16s cubic-bezier(0.25,0.46,0.45,0.94)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = P.accent; e.currentTarget.style.paddingLeft = '1.25rem' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '1rem' }}
                 >
-                  <Icon size={14} className="text-sky-500" />{label}
+                  <Icon size={14} style={{ color: P.secondary }} />{label}
                 </button>
               ))}
-              <div className="border-t border-cyan-100">
+              <div style={{ borderTop: `1px solid ${P.border}` }}>
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                  onClick={() => { logout(); toast.success('Logged out'); navigate('/login') }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left"
+                  style={{
+                    color: '#dc2626',
+                    transition: 'background-color 0.13s ease, padding-left 0.16s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.paddingLeft = '1.25rem' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '1rem' }}
                 >
                   <LogOut size={14} />Logout
                 </button>

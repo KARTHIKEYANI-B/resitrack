@@ -68,7 +68,7 @@ export default function UserDashboard() {
         </h1>
         <p className="section-subtitle">
           {user?.flatNumber ? `${user.flatType || 'Flat'} ${user.flatNumber} · ` : ''}
-          {currentMonthLabel} {year2026} Overview
+          {currentMonthLabel} Overview
         </p>
       </div>
 
@@ -109,7 +109,7 @@ export default function UserDashboard() {
       )}
 
       {/* ── 4-card grid ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rt-stat-grid">
 
         {/* Card 1 — Current Month Due */}
         <div className="card card-hover">
@@ -220,7 +220,7 @@ export default function UserDashboard() {
       {/* Quick Actions */}
       <div className="card">
         <h2 className="text-sm font-semibold text-[#022b3a] mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rt-stat-grid">
           {[
             { label: 'Pay Maintenance',  path: '/user/maintenance',     icon: CreditCard },
             { label: 'Payment History',  path: '/user/payment-history', icon: Clock },
@@ -244,13 +244,13 @@ export default function UserDashboard() {
       </div>
 
       {/* Notice */}
-      <div className="flex items-start gap-3 p-3 bg-white/60 border border-[#bfdbf7] rounded-xl">
+      {/* <div className="flex items-start gap-3 p-3 bg-white/60 border border-[#bfdbf7] rounded-xl">
         <Bell size={13} className="text-[#1f7a8c] mt-0.5 flex-shrink-0" />
         <p className="text-xs text-[#1f7a8c]">
           Maintenance amount is set by admin. Contact admin if you have any discrepancy.
           Payments made via Google Pay should be reported to admin for verification.
         </p>
-      </div>
+      </div> */}
     </div>
   )
 }

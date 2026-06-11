@@ -5,7 +5,8 @@ import {
 } from 'recharts'
 import {
   TrendingUp, TrendingDown, IndianRupee, Users, CheckCircle,
-  Clock, RefreshCw, ArrowUpRight, ArrowDownRight, Download, BarChart3
+  Clock, RefreshCw, ArrowUpRight, ArrowDownRight, Download, BarChart3,
+  Smartphone, Banknote
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
@@ -15,12 +16,12 @@ import toast from 'react-hot-toast'
 const PIE_COLORS = ['#e5e7eb', '#9ca3af', '#6b7280', '#4b5563', '#374151', '#1f2937']
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
-const fmt = (n) =>
-  n >= 100000
-    ? `₹${(n / 100000).toFixed(2)}L`
-    : n >= 1000
-    ? `₹${(n / 1000).toFixed(1)}K`
-    : `₹${Number(n ?? 0).toLocaleString('en-IN')}`
+const fmt = (n) => {
+  const v = Number(n ?? 0)
+  if (isNaN(v) || v === 0) return '₹ 0'
+  // Always full amount — no K, L, M abbreviations
+  return '₹\u00A0' + v.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
 
 const MONTHS = [
   { value: 0,  label: 'Full Year'  },
@@ -143,7 +144,7 @@ export default function FinancialReports() {
         <div className="flex items-center gap-2 flex-wrap">
           <select value={year} onChange={e => setYear(Number(e.target.value))}
             className="input-field text-xs w-24">
-            {[2023, 2024, 2025, 2026].map(y => <option key={y}>{y}</option>)}
+            {[2021, 2022, 2023, 2024, 2025, 2026].map(y => <option key={y}>{y}</option>)}
           </select>
           <select value={month} onChange={e => setMonth(Number(e.target.value))}
             className="input-field text-xs w-36">
@@ -198,6 +199,38 @@ export default function FinancialReports() {
           loading={loading} />
       </div>
 
+      {/* ── KPI Row 3 — Bank / Cash collection split ───────────────────── */}
+      {/* Values come from AnalyticsService → sumBankCollectedByYearAndMonth /   */}
+      {/* sumCashCollectedByYearAndMonth — the exact same queries used by        */}
+      {/* Admin Payment Tracking → PaymentController.getTrackingStats().         */}
+      {/* This guarantees Super Admin always shows the same numbers as Admin.    */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="card card-hover p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#1f7a8c] font-medium uppercase tracking-wide">Bank Collection</p>
+            <div className="w-8 h-8 rounded-lg bg-[#f0f8fb] border border-[#bfdbf7] flex items-center justify-center">
+              <Smartphone size={14} className="text-[#022b3a]/60" />
+            </div>
+          </div>
+          {loading
+            ? <div className="h-7 w-24 bg-[#e1e5f2] rounded-lg animate-pulse" />
+            : <p className="text-2xl font-bold text-[#022b3a] font-mono">{fmt(s.bankCollection)}</p>}
+          <p className="text-xs text-[#1f7a8c]">UPI · Bank Transfer · NEFT · RTGS · Cheque · etc.</p>
+        </div>
+        <div className="card card-hover p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#1f7a8c] font-medium uppercase tracking-wide">Cash Collection</p>
+            <div className="w-8 h-8 rounded-lg bg-[#f0f8fb] border border-[#bfdbf7] flex items-center justify-center">
+              <Banknote size={14} className="text-[#022b3a]/60" />
+            </div>
+          </div>
+          {loading
+            ? <div className="h-7 w-24 bg-[#e1e5f2] rounded-lg animate-pulse" />
+            : <p className="text-2xl font-bold text-[#022b3a] font-mono">{fmt(s.cashCollection)}</p>}
+          <p className="text-xs text-[#1f7a8c]">Cash payments only</p>
+        </div>
+      </div>
+
       {/* ── Revenue vs Expense Bar Chart ──────────────────────────────── */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-5">
@@ -218,7 +251,7 @@ export default function FinancialReports() {
               margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#bfdbf7" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}`}
+              <YAxis tickFormatter={v => fmt(v)}
                 tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} width={55} />
               <Tooltip content={<ChartTip />} cursor={{ fill: '#e1e5f2' }} />
               <Legend iconType="circle" iconSize={7}
@@ -243,7 +276,7 @@ export default function FinancialReports() {
               <LineChart data={chart} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#bfdbf7" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}`}
+                <YAxis tickFormatter={v => fmt(v)}
                   tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} width={55} />
                 <Tooltip content={<ChartTip />} />
                 <Line type="monotone" dataKey="balance" name="Net Balance"
