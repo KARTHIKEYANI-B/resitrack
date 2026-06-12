@@ -8,7 +8,6 @@ const USER_KEY  = 'resitrack_user'
 /**
  * Read from localStorage first (persisted "remember me" session),
  * then fall back to sessionStorage (current-tab session only).
- * This ensures both storage strategies work correctly.
  */
 function readStored(key) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key)
@@ -38,12 +37,8 @@ export function AuthProvider({ children }) {
    *
    * rememberMe = true  → localStorage  (survives browser close/restart)
    * rememberMe = false → sessionStorage (cleared when tab/window closes)
-   *
-   * Defaults to false. Existing call sites that don't pass the flag
-   * continue to work exactly as before.
    */
   const login = useCallback((tokenValue, userData, rememberMe = false) => {
-    // Always clear both stores first to avoid stale cross-store data
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     sessionStorage.removeItem(TOKEN_KEY)
@@ -67,6 +62,7 @@ export function AuthProvider({ children }) {
 
   const isAdmin        = user?.role === 'ADMIN'
   const isUser         = user?.role === 'USER'
+  const isSecurityUser = user?.role === 'SECURITY'          // NEW
   const isSuperAdmin   = user?.role === 'ADMIN' && user?.superAdmin === true
   const isOwner        = user?.role === 'USER' && (user?.residentRole === 'OWNER' || !user?.residentRole)
   const isFamilyMember = user?.role === 'USER' && user?.residentRole === 'FAMILY_MEMBER'
@@ -74,7 +70,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, token, login, logout, loading,
-      isAdmin, isUser, isSuperAdmin, isOwner, isFamilyMember,
+      isAdmin, isUser, isSecurityUser, isSuperAdmin, isOwner, isFamilyMember,
     }}>
       {children}
     </AuthContext.Provider>

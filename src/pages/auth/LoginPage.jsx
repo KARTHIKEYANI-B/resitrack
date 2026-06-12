@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Building2, Lock, Mail, Shield, User, Clock, XCircle, AlertTriangle } from 'lucide-react'
+import { Eye, EyeOff, Building2, Lock, Mail, Shield, User, Clock, XCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { authAPI } from '../../api/authAPI'
 import toast from 'react-hot-toast'
@@ -56,11 +56,17 @@ function Banner({ state }) {
   return null
 }
 
+const TABS = [
+  { key: 'admin',    icon: Shield,      label: 'Admin'    },
+  { key: 'user',     icon: User,        label: 'Resident' },
+  { key: 'security', icon: ShieldCheck, label: 'Security' },
+]
+
 export default function LoginPage() {
   const [tab,        setTab]        = useState('admin')
   const [form,       setForm]       = useState({ email: '', password: '' })
   const [showPw,     setShowPw]     = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)   // ← Remember Me state
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [banner,     setBanner]     = useState(null)
   const { login } = useAuth()
@@ -70,19 +76,30 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.email || !form.password) { toast.error('Email (or mobile number) and password are required'); return }
+    if (!form.email || !form.password) {
+      toast.error('Email (or mobile number) and password are required')
+      return
+    }
     setLoading(true); setBanner(null)
     try {
-      const res  = tab === 'admin' ? await authAPI.adminLogin(form) : await authAPI.userLogin(form)
+      let res
+      if (tab === 'admin')    res = await authAPI.adminLogin(form)
+      else if (tab === 'security') res = await authAPI.securityLogin(form)
+      else                    res = await authAPI.userLogin(form)
+
       const data = res.data?.data ?? res.data
-      // Pass rememberMe flag → AuthContext stores in localStorage or sessionStorage accordingly
+
       login(
         data.token,
-        data.user ?? { name: data.name, email: form.email, role: tab === 'admin' ? 'ADMIN' : 'USER' },
+        data.user ?? { name: data.name, email: form.email, role: tab.toUpperCase() },
         rememberMe,
       )
       toast.success(`Welcome, ${data.user?.name || data.name || 'User'}!`)
-      navigate(tab === 'admin' ? '/admin' : '/user')
+
+      if (tab === 'admin')    navigate('/admin')
+      else if (tab === 'security') navigate('/security')
+      else                    navigate('/user')
+
     } catch (err) {
       const msg = err.response?.data?.message || ''
 
@@ -101,6 +118,14 @@ export default function LoginPage() {
       toast.error(msg || 'Login failed. Check your credentials.')
     } finally { setLoading(false) }
   }
+
+  const tabLabel = tab === 'admin' ? 'Admin Sign In'
+    : tab === 'security' ? 'Security Sign In'
+    : 'Resident Sign In'
+
+  const tabSub = tab === 'admin' ? 'Access the admin dashboard'
+    : tab === 'security' ? 'Access the security dashboard'
+    : 'Access your resident portal'
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
@@ -123,15 +148,15 @@ export default function LoginPage() {
 
           {/* Tabs */}
           <div className="flex" style={{ borderBottom: `1px solid ${P.border}` }}>
-            {[{ key: 'admin', icon: Shield, label: 'Admin' }, { key: 'user', icon: User, label: 'Resident' }].map(({ key, icon: Icon, label }) => (
+            {TABS.map(({ key, icon: Icon, label }) => (
               <button key={key} onClick={() => { setTab(key); setBanner(null) }}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 py-3.5 text-xs font-semibold transition-colors"
                 style={{
                   background:   tab === key ? P.accent : 'transparent',
                   color:        tab === key ? P.primary : P.muted,
                   borderBottom: tab === key ? `2px solid ${P.primary}` : '2px solid transparent',
                 }}>
-                <Icon size={14} />{label}
+                <Icon size={13} />{label}
               </button>
             ))}
           </div>
@@ -139,18 +164,16 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-4">
             <div>
-              <p className="text-base font-bold" style={{ color: P.dark }}>
-                {tab === 'admin' ? 'Admin Sign In' : 'Resident Sign In'}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: P.muted }}>
-                {tab === 'admin' ? 'Access the admin dashboard' : 'Access your resident portal'}
-              </p>
+              <p className="text-base font-bold" style={{ color: P.dark }}>{tabLabel}</p>
+              <p className="text-xs mt-0.5" style={{ color: P.muted }}>{tabSub}</p>
             </div>
 
             <Banner state={banner} />
 
             <div>
-              <label className="label">Email Address or Mobile Number</label>
+              <label className="label">
+                {tab === 'security' ? 'Email Address or Phone Number' : 'Email Address or Mobile Number'}
+              </label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.secondary }} />
                 <input type="text" value={form.email} onChange={e => set('email', e.target.value)}
@@ -173,14 +196,14 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* ── Remember Me ───────────────────────────────────────────── */}
+            {/* Remember Me */}
             <label className="flex items-center gap-2.5 cursor-pointer select-none group">
               <div
                 onClick={() => setRememberMe(v => !v)}
                 className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
                 style={{
-                  background:   rememberMe ? P.primary : 'transparent',
-                  borderColor:  rememberMe ? P.primary : P.border,
+                  background:  rememberMe ? P.primary : 'transparent',
+                  borderColor: rememberMe ? P.primary : P.border,
                 }}>
                 {rememberMe && (
                   <svg width="9" height="7" viewBox="0 0 9 7" fill="none">

@@ -39,6 +39,13 @@ import UserNotifications   from './pages/user/UserNotifications'
 import UserSettings        from './pages/user/UserSettings'
 import UserMembersList     from './pages/user/UserMembersList'
 
+// Security Layout + Pages  ← NEW
+import SecurityLayout        from './pages/security/SecurityLayout'
+import SecurityDashboard     from './pages/security/SecurityDashboard'
+import SecurityResidents     from './pages/security/SecurityResidents'
+import SecurityNotifications from './pages/security/SecurityNotifications'
+import SecurityMessages      from './pages/security/SecurityMessages'
+
 const TOAST_STYLE = {
   background: '#FFFAF5',
   color: '#1a2e2e',
@@ -95,7 +102,7 @@ export default function App() {
             <Route path="settings"               element={<AdminSettings />} />
           </Route>
 
-          {/* User — all sub-routes live inside UserLayout via <Outlet /> */}
+          {/* User */}
           <Route path="/user" element={
             <ProtectedRoute role="USER"><UserLayout /></ProtectedRoute>
           }>
@@ -109,6 +116,16 @@ export default function App() {
             <Route path="financial-report"       element={<UserFinancialReport />} />
             <Route path="notifications"          element={<UserNotifications />} />
             <Route path="settings"               element={<UserSettings />} />
+          </Route>
+
+          {/* Security  ← NEW */}
+          <Route path="/security" element={
+            <ProtectedRoute role="SECURITY"><SecurityLayout /></ProtectedRoute>
+          }>
+            <Route index                         element={<SecurityDashboard />} />
+            <Route path="residents"              element={<SecurityResidents />} />
+            <Route path="notifications"          element={<SecurityNotifications />} />
+            <Route path="messages"               element={<SecurityMessages />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
