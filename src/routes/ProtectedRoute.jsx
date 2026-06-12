@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
  *
  * role prop values:
  *   "ADMIN"    — only admin logins
- *   "USER"     — any USER role (owners AND family members)
+ *   "USER"     — owners AND family members
  *   "SECURITY" — only security guard logins
  *   "OWNER"    — only property owners (residentRole === OWNER)
  *   undefined  — any authenticated user
@@ -27,26 +27,19 @@ export default function ProtectedRoute({ children, role }) {
 
   if (!token || !user) return <Navigate to="/login" replace />
 
-  if (role === 'ADMIN' && user.role !== 'ADMIN') {
-    if (user.role === 'SECURITY') return <Navigate to="/security" replace />
-    return <Navigate to="/user" replace />
+  // Helper: redirect to the correct home for the logged-in role
+  const home = () => {
+    if (user.role === 'ADMIN')    return '/admin'
+    if (user.role === 'SECURITY') return '/security'
+    return '/user'
   }
 
-  if (role === 'USER' && user.role !== 'USER') {
-    if (user.role === 'ADMIN')    return <Navigate to="/admin" replace />
-    if (user.role === 'SECURITY') return <Navigate to="/security" replace />
-    return <Navigate to="/login" replace />
-  }
-
-  if (role === 'SECURITY' && user.role !== 'SECURITY') {
-    if (user.role === 'ADMIN') return <Navigate to="/admin" replace />
-    return <Navigate to="/user" replace />
-  }
+  if (role === 'ADMIN'    && user.role !== 'ADMIN')    return <Navigate to={home()} replace />
+  if (role === 'USER'     && user.role !== 'USER')     return <Navigate to={home()} replace />
+  if (role === 'SECURITY' && user.role !== 'SECURITY') return <Navigate to={home()} replace />
 
   // OWNER-only routes — redirect family members to their dashboard
-  if (role === 'OWNER' && !isOwner) {
-    return <Navigate to="/user" replace />
-  }
+  if (role === 'OWNER' && !isOwner) return <Navigate to="/user" replace />
 
   return children
 }

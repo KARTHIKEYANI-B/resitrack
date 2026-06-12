@@ -8,7 +8,7 @@ import LoginPage           from './pages/auth/LoginPage'
 import RegisterPage        from './pages/auth/RegisterPage'
 import PendingApprovalPage from './pages/auth/PendingApprovalPage'
 
-// Admin Layout + Pages
+// Admin Layout + Pages (unchanged)
 import AdminLayout           from './pages/admin/AdminLayout'
 import AdminDashboard        from './pages/admin/Dashboard'
 import ResidentApprovalPage  from './pages/admin/ResidentApprovalPage'
@@ -26,7 +26,7 @@ import AdminComplaints       from './pages/admin/AdminComplaints'
 import AdminSettings         from './pages/admin/Settings'
 import AdminMembersList      from './pages/admin/MembersList'
 
-// User Layout + Pages
+// User Layout + Pages (unchanged)
 import UserLayout          from './pages/user/UserLayout'
 import UserDashboard       from './pages/user/UserDashboard'
 import FamilyMembersPage   from './pages/user/FamilyMembersPage'
@@ -39,7 +39,7 @@ import UserNotifications   from './pages/user/UserNotifications'
 import UserSettings        from './pages/user/UserSettings'
 import UserMembersList     from './pages/user/UserMembersList'
 
-// Security Layout + Pages  ← NEW
+// Security Layout + Pages
 import SecurityLayout        from './pages/security/SecurityLayout'
 import SecurityDashboard     from './pages/security/SecurityDashboard'
 import SecurityResidents     from './pages/security/SecurityResidents'
@@ -67,10 +67,7 @@ export default function App() {
             success: { iconTheme: { primary: '#007979', secondary: '#ffffff' } },
             error:   { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
           }}
-          containerStyle={{
-            top: 20,
-            right: 20,
-          }}
+          containerStyle={{ top: 20, right: 20 }}
           gutter={8}
         />
 
@@ -81,51 +78,51 @@ export default function App() {
           <Route path="/register"         element={<RegisterPage />} />
           <Route path="/pending-approval" element={<PendingApprovalPage />} />
 
-          {/* Admin */}
+          {/* Admin — unchanged */}
           <Route path="/admin" element={
             <ProtectedRoute role="ADMIN"><AdminLayout /></ProtectedRoute>
           }>
-            <Route index                         element={<AdminDashboard />} />
-            <Route path="approvals"              element={<ResidentApprovalPage />} />
-            <Route path="residents"              element={<ResidentList />} />
-            <Route path="members"                element={<AdminMembersList />} />
-            <Route path="maintenance"            element={<MaintenanceManagement />} />
-            <Route path="maintenance-list"       element={<MaintenanceList />} />
-            <Route path="payments"               element={<PaymentTracking />} />
-            <Route path="payment-verification"   element={<PaymentVerification />} />
-            <Route path="expenses"               element={<ExpenseManagement />} />
-            <Route path="pending-dues"           element={<PendingDues />} />
-            <Route path="receipts"               element={<Receipts />} />
-            <Route path="financial-report"       element={<AdminFinancialReport />} />
-            <Route path="complaints"             element={<AdminComplaints />} />
-            <Route path="notifications"          element={<AdminNotifications />} />
-            <Route path="settings"               element={<AdminSettings />} />
+            <Route index                       element={<AdminDashboard />} />
+            <Route path="approvals"            element={<ResidentApprovalPage />} />
+            <Route path="residents"            element={<ResidentList />} />
+            <Route path="members"              element={<AdminMembersList />} />
+            <Route path="maintenance"          element={<MaintenanceManagement />} />
+            <Route path="maintenance-list"     element={<MaintenanceList />} />
+            <Route path="payments"             element={<PaymentTracking />} />
+            <Route path="payment-verification" element={<PaymentVerification />} />
+            <Route path="expenses"             element={<ExpenseManagement />} />
+            <Route path="pending-dues"         element={<PendingDues />} />
+            <Route path="receipts"             element={<Receipts />} />
+            <Route path="financial-report"     element={<AdminFinancialReport />} />
+            <Route path="complaints"           element={<AdminComplaints />} />
+            <Route path="notifications"        element={<AdminNotifications />} />
+            <Route path="settings"             element={<AdminSettings />} />
           </Route>
 
-          {/* User */}
+          {/* User — unchanged */}
           <Route path="/user" element={
             <ProtectedRoute role="USER"><UserLayout /></ProtectedRoute>
           }>
-            <Route index                         element={<UserDashboard />} />
-            <Route path="members"                element={<UserMembersList />} />
-            <Route path="family-members"         element={<FamilyMembersPage />} />
-            <Route path="maintenance"            element={<CurrentMaintenance />} />
-            <Route path="payment-history"        element={<PaymentHistory />} />
-            <Route path="pending-dues"           element={<UserPendingDues />} />
-            <Route path="receipts"               element={<UserReceipts />} />
-            <Route path="financial-report"       element={<UserFinancialReport />} />
-            <Route path="notifications"          element={<UserNotifications />} />
-            <Route path="settings"               element={<UserSettings />} />
+            <Route index                   element={<UserDashboard />} />
+            <Route path="members"          element={<UserMembersList />} />
+            <Route path="family-members"   element={<FamilyMembersPage />} />
+            <Route path="maintenance"      element={<CurrentMaintenance />} />
+            <Route path="payment-history"  element={<PaymentHistory />} />
+            <Route path="pending-dues"     element={<UserPendingDues />} />
+            <Route path="receipts"         element={<UserReceipts />} />
+            <Route path="financial-report" element={<UserFinancialReport />} />
+            <Route path="notifications"    element={<UserNotifications />} />
+            <Route path="settings"         element={<UserSettings />} />
           </Route>
 
-          {/* Security  ← NEW */}
+          {/* Security */}
           <Route path="/security" element={
             <ProtectedRoute role="SECURITY"><SecurityLayout /></ProtectedRoute>
           }>
-            <Route index                         element={<SecurityDashboard />} />
-            <Route path="residents"              element={<SecurityResidents />} />
-            <Route path="notifications"          element={<SecurityNotifications />} />
-            <Route path="messages"               element={<SecurityMessages />} />
+            <Route index                   element={<SecurityDashboard />} />
+            <Route path="residents"        element={<SecurityResidents />} />
+            <Route path="notifications"    element={<SecurityNotifications />} />
+            <Route path="messages"         element={<SecurityMessages />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

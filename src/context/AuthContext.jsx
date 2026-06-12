@@ -8,6 +8,7 @@ const USER_KEY  = 'resitrack_user'
 /**
  * Read from localStorage first (persisted "remember me" session),
  * then fall back to sessionStorage (current-tab session only).
+ * This ensures both storage strategies work correctly.
  */
 function readStored(key) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key)
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
 
   const isAdmin        = user?.role === 'ADMIN'
   const isUser         = user?.role === 'USER'
-  const isSecurityUser = user?.role === 'SECURITY'          // NEW
+  const isSecurityUser = user?.role === 'SECURITY'
   const isSuperAdmin   = user?.role === 'ADMIN' && user?.superAdmin === true
   const isOwner        = user?.role === 'USER' && (user?.residentRole === 'OWNER' || !user?.residentRole)
   const isFamilyMember = user?.role === 'USER' && user?.residentRole === 'FAMILY_MEMBER'
