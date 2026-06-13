@@ -158,8 +158,8 @@ export default function AdminFinancialReport() {
       {/* ── Tab Switch ───────────────────────────────────────── */}
       <div className="flex items-center gap-2">
         {[
-          { key: 'collection', icon: TrendingUp,   label: 'Collection Report' },
-          { key: 'expenses',   icon: TrendingDown,  label: 'Expense Report' },
+          { key: 'collection', icon: TrendingUp,   label: 'Income / Collection Report' },
+          { key: 'expenses',   icon: TrendingDown,  label: 'Expenditure Report' },
         ].map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all border ${
@@ -201,11 +201,11 @@ function SummaryCards({ coll, exp, summary }) {
   const totalBal = bankBal + cashBal
 
   const cards = [
-    { label: 'Opening Balance',  value: fmt(openBal),   icon: Wallet,       sub: 'Start of period' },
-    { label: 'Total Collected',  value: fmt(collected), icon: TrendingUp,   sub: 'All PAID payments' },
-    { label: 'Total Expenses',   value: fmt(expenses),  icon: TrendingDown, sub: 'All expenses' },
-    { label: 'Closing Balance',  value: fmt(closing),   icon: IndianRupee,  sub: 'Net balance' },
-    { label: 'Outstanding Dues',  value: fmt(pending),   icon: Users,        sub: 'Estimated unpaid amount' },
+    { label: 'Opening Balance (Period Start)',  value: fmt(openBal),   icon: Wallet,       sub: 'Start of period' },
+    { label: 'Total Amount Collected',  value: fmt(collected), icon: TrendingUp,   sub: 'All PAID payments' },
+    { label: 'Total Expenditure',   value: fmt(expenses),  icon: TrendingDown, sub: 'All expenses' },
+    { label: 'Closing Balance (Period End)',  value: fmt(closing),   icon: IndianRupee,  sub: 'Net balance' },
+    { label: 'Estimated Outstanding Dues',  value: fmt(pending),   icon: Users,        sub: 'Estimated unpaid amount' },
   ]
 
   return (
@@ -351,10 +351,10 @@ function CollectionReport({ data, year, onExport, exporting }) {
         {/* Statement Footer */}
         <div className="border-t border-[#bfdbf7] p-4 grid grid-cols-2 sm:grid-cols-5 gap-0">
           {[
-            { label: 'Opening Balance',   value: data.openingBalance },
+            { label: 'Opening Balance (Period Start)',   value: data.openingBalance },
             { label: '+ Total Collected', value: data.totalCollected },
             { label: '− Total Expenses',  value: data.totalExpenses  },
-            { label: 'Closing Balance',   value: data.closingBalance, highlight: true },
+            { label: 'Closing Balance (Period End)',   value: data.closingBalance, highlight: true },
             { label: 'Pending Dues',      value: data.pendingDues    },
           ].map(({ label, value, highlight }) => (
             <div key={label} className={`px-4 py-3 ${highlight ? 'bg-[#e1e5f2] rounded-lg' : ''}`}>
@@ -492,7 +492,7 @@ function ExpenseReport({ data, onExport, exporting }) {
             <p className="text-xs font-semibold text-[#022b3a] uppercase tracking-wide mb-3">Bank Summary</p>
             <div className="space-y-0">
               {[
-                { label: 'Opening Balance',    value: openingBalance, border: true },
+                { label: 'Opening Balance (Period Start)',    value: openingBalance, border: true },
                 { label: '+ By Bank Transfer', value: totalIncome },
                 { label: 'Total Income',       value: Number(openingBalance) + Number(totalIncome), bold: true },
                 { label: '− Cheque Expenses',  value: totalCheque },

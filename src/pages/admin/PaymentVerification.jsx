@@ -74,7 +74,7 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
   const isBank = method === 'BANK_TRANSFER'
 
   return (
-    <Modal isOpen={open} onClose={onClose} title="Payment Verification Request" size="lg">
+    <Modal isOpen={open} onClose={onClose} title="Payment Verification Details" size="lg">
       <div className="space-y-4">
         {/* Payment method badge */}
         <div className="flex items-center gap-2">
@@ -90,14 +90,14 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
         {/* Owner details */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Submitted By',     value: request.submittedByLabel || request.submittedName },
-            { label: 'Owner Detail',     value: request.ownerName || '—' },
-            { label: 'Flat/Villa',       value: request.flatNumber },
+            { label: 'Submitted By Resident',     value: request.submittedByLabel || request.submittedName },
+            { label: 'Property Owner Name',     value: request.ownerName || '—' },
+            { label: 'Flat / Villa Number',       value: request.flatNumber },
             { label: 'Phone',            value: request.phoneNumber },
-            { label: 'Billing Month',    value: request.paymentMonth },
-            ...(!isCash ? [{ label: 'Transaction / Ref ID', value: request.transactionId, mono: true }] : []),
-            ...(isCash  ? [{ label: 'Paid To Admin', value: request.paidToAdminName || '—' }] : []),
-            { label: 'Submitted',        value: formatDate(request.createdAt) },
+            { label: 'Billing Month / Period',    value: request.paymentMonth },
+            ...(!isCash ? [{ label: 'Transaction / Reference ID', value: request.transactionId, mono: true }] : []),
+            ...(isCash  ? [{ label: 'Cash Received By', value: request.paidToAdminName || '—' }] : []),
+            { label: 'Submitted On',        value: formatDate(request.createdAt) },
           ].map(({ label, value, mono }) => (
             <div key={label} className="p-3 bg-white rounded-xl border border-[#bfdbf7]">
               <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide mb-0.5">{label}</p>
@@ -172,7 +172,7 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="label">Rejection Reason (optional)</label>
+                  <label className="label">Reason for Rejection (optional)</label>
                   <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
                     rows={2} placeholder="e.g. Amount mismatch, cash not received..."
                     className="input-field resize-none" />
@@ -272,7 +272,7 @@ export default function PaymentVerification() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="section-title text-xl">Pending Payment Approvals</h1>
+          <h1 className="section-title text-xl">Payment Verification Requests</h1>
           <p className="section-subtitle">Review and approve resident payment submissions by method</p>
         </div>
         <button onClick={() => fetchAll(true)} disabled={refreshing}

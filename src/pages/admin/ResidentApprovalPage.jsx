@@ -191,7 +191,7 @@ export default function ResidentApprovalPage() {
               </span>
             )}
           </div>
-          <p className="section-subtitle">Review and approve resident registration requests</p>
+          <p className="section-subtitle">Review and process incoming resident registration requests</p>
         </div>
         <button onClick={fetchList} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
@@ -203,12 +203,12 @@ export default function ResidentApprovalPage() {
         <div className="card card-hover text-center py-3 px-2 border border-transparent">
           <Users size={16} className="mx-auto mb-1 text-[#022b3a]/40" />
           <p className="text-xl font-bold font-mono text-[#022b3a]">{totalCount}</p>
-          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Total Registered</p>
+          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Total Registrations</p>
         </div>
         <div className="card card-hover text-center py-3 px-2 border border-yellow-900/30">
           <CheckCircle size={16} className="mx-auto mb-1 text-yellow-400" />
           <p className="text-xl font-bold font-mono text-yellow-400">{pendingCount}</p>
-          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Pending Approval</p>
+          <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">Awaiting Approval</p>
         </div>
       </div>
 

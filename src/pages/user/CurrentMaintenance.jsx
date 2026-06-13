@@ -201,7 +201,7 @@ export default function CurrentMaintenance() {
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
       <div>
-        <h1 className="section-title text-xl">Current Maintenance</h1>
+        <h1 className="section-title text-xl">My Monthly Maintenance Bill</h1>
         <p className="section-subtitle">Your maintenance bill for {m?.month || getCurrentMonth()}</p>
       </div>
 
@@ -224,9 +224,9 @@ export default function CurrentMaintenance() {
         {m ? (
           <div className="space-y-3">
             {[
-              { label: 'Maintenance Amount', value: formatCurrency(m.amount), icon: IndianRupee },
+              { label: 'Maintenance Bill Amount', value: formatCurrency(m.amount), icon: IndianRupee },
               { label: 'Property Type',      value: m.flatType,               icon: null },
-              { label: 'Due Date',           value: formatDate(m.dueDate),    icon: CalendarDays },
+              { label: 'Payment Due Date',           value: formatDate(m.dueDate),    icon: CalendarDays },
               ...(m.lateFeeApplied ? [{ label: 'Late Fee', value: formatCurrency(m.lateFee), accent: true }] : []),
             ].map(({ label, value, accent }) => (
               <div key={label} className="flex justify-between items-center py-2 border-b border-[#bfdbf7]/60">
@@ -315,10 +315,10 @@ export default function CurrentMaintenance() {
           <div className="space-y-4">
             <div className="p-4 bg-white rounded-xl border border-[#bfdbf7] space-y-3">
               {[
-                { label: 'Billing Month',         value: m.month },
+                { label: 'Billing Month / Period',         value: m.month },
                 { label: 'Property Type',         value: m.flatType },
-                { label: 'Maintenance Amount',    value: formatCurrency(m.amount), mono: true },
-                { label: 'Due Date',              value: formatDate(m.dueDate) },
+                { label: 'Maintenance Bill Amount',    value: formatCurrency(m.amount), mono: true },
+                { label: 'Payment Due Date',              value: formatDate(m.dueDate) },
                 ...(m.lateFeeApplied ? [{ label: 'Late Fee', value: `+ ${formatCurrency(m.lateFee)}`, red: true, mono: true }] : []),
               ].map(({ label, value, mono, red }) => (
                 <div key={label} className="flex justify-between py-2 border-b border-[#bfdbf7]">

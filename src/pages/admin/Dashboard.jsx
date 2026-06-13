@@ -86,7 +86,7 @@ function BalanceCard({ totalBalance, bankBalance, cashBalance, totalExpense, ban
   return (
     <div className="rounded-xl border border-[#bfdbf7] bg-white p-4 flex flex-col gap-3 hover:border-[#1f7a8c] transition-all col-span-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-[#1f7a8c] font-medium tracking-wide uppercase">Balance</p>
+        <p className="text-xs text-[#1f7a8c] font-medium tracking-wide uppercase">Available Balance</p>
         <div className="w-8 h-8 rounded-lg bg-[#f0f8fb] border border-[#bfdbf7] flex items-center justify-center">
           <IndianRupee size={14} className="text-[#022b3a]/60" />
         </div>
@@ -115,7 +115,7 @@ function BalanceCard({ totalBalance, bankBalance, cashBalance, totalExpense, ban
               <span className="text-[11px] font-mono text-red-500 font-semibold">−{fmt(bankExpense)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-[#e1e5f2] pt-1 mt-1">
-              <span className="text-[11px] text-[#022b3a]/70 font-semibold">Bank Balance</span>
+              <span className="text-[11px] text-[#022b3a]/70 font-semibold">Bank Available Balance</span>
               <span className={`text-[11px] font-mono font-bold ${bankBalance >= 0 ? 'text-[#022b3a]' : 'text-red-500'}`}>
                 {fmt(bankBalance)}
               </span>
@@ -137,7 +137,7 @@ function BalanceCard({ totalBalance, bankBalance, cashBalance, totalExpense, ban
               <span className="text-[11px] font-mono text-red-500 font-semibold">−{fmt(cashExpense)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-[#e1e5f2] pt-1 mt-1">
-              <span className="text-[11px] text-[#022b3a]/70 font-semibold">Cash Balance</span>
+              <span className="text-[11px] text-[#022b3a]/70 font-semibold">Cash Available Balance</span>
               <span className={`text-[11px] font-mono font-bold ${cashBalance >= 0 ? 'text-[#022b3a]' : 'text-red-500'}`}>
                 {fmt(cashBalance)}
               </span>
@@ -335,7 +335,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
         <StatCard
           icon={TrendingUp}
-          label={`Total Collection · ${MONTH_NAMES[selMonth - 1]}`}
+          label={`Total Amount Collected · ${MONTH_NAMES[selMonth - 1]}`}
           value={fmt(income)}
           sub={`Collection rate: ${rate.toFixed(1)}%`}
           growth={revGrowth}
@@ -343,7 +343,7 @@ export default function Dashboard() {
         />
         <StatCard
           icon={TrendingDown}
-          label={`Total Expenses · ${MONTH_NAMES[selMonth - 1]}`}
+          label={`Total Expenditure · ${MONTH_NAMES[selMonth - 1]}`}
           value={fmt(totalExpense)}
           sub="Bank + Cash expenses"
           growth={expGrowth}
@@ -524,10 +524,10 @@ export default function Dashboard() {
       {/* ── Quick links ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Payment Tracking', path: '/admin/payments', sub: 'View all payments' },
+          { label: 'Payment Management', path: '/admin/payments', sub: 'View all payments' },
           { label: 'Maintenance',      path: '/admin/maintenance',      sub: 'Manage batches' },
           { label: 'Expenses',         path: '/admin/expenses',         sub: 'Record expenses' },
-          { label: 'Financial Summary Report', path: '/admin/financial-report', sub: 'Full reports' },
+          { label: 'Financial Summary', path: '/admin/financial-report', sub: 'Full reports' },
         ].map(({ label, path, sub }) => (
           <a key={path} href={path} className="card card-hover p-4 group flex flex-col gap-1 animate-pop-in">
             <p className="text-sm font-semibold text-[#022b3a] group-hover:text-[#1f7a8c] transition-colors">{label}</p>

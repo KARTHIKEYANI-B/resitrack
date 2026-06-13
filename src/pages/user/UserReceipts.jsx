@@ -94,7 +94,7 @@ export default function UserReceipts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="section-title text-xl">My Receipts</h1>
-          <p className="section-subtitle">Download or print payment receipts</p>
+          <p className="section-subtitle">Download or print your verified payment receipts</p>
         </div>
         <button onClick={load} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
@@ -118,7 +118,7 @@ export default function UserReceipts() {
       {/* Receipts list */}
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
-          <h2 className="text-sm font-semibold text-[#022b3a]">Payment Receipts</h2>
+          <h2 className="text-sm font-semibold text-[#022b3a]">My Payment Receipts</h2>
           <div className="relative">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1f7a8c]" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
@@ -139,7 +139,7 @@ export default function UserReceipts() {
               <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Receipt No.', 'Billing Month', 'Amount', 'Late Fee', 'Date', 'Method', 'Actions'].map(h => (
+                    {['Receipt No.', 'Billing Month', 'Amount Paid', 'Late Fee', 'Payment Date', 'Payment Method', 'Actions'].map(h => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>

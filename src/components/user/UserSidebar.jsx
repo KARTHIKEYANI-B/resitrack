@@ -16,19 +16,19 @@ const P = {
 
 const COMMON_NAV = [
   { to: '/user',               icon: LayoutDashboard, label: 'Dashboard',    end: true },
-  { to: '/user/members',       icon: ShieldCheck,     label: 'Members List' },
+  { to: '/user/members',       icon: ShieldCheck,     label: 'Community Members' },
   { to: '/user/notifications', icon: Bell,            label: 'Notifications' },
   { to: '/user/settings',      icon: Settings,        label: 'Settings' },
 ]
 const PROPERTY_NAV = [
   { to: '/user/maintenance',     icon: Wrench,      label: 'Maintenance' },
   { to: '/user/payment-history', icon: CreditCard,  label: 'Payment History' },
-  { to: '/user/pending-dues',    icon: Clock,       label: 'Pending Dues' },
+  { to: '/user/pending-dues',    icon: Clock,       label: 'Outstanding Dues' },
   { to: '/user/receipts',        icon: FileText,    label: 'Receipts' },
-  { to: '/user/financial-report',icon: BookOpen,    label: 'Financial Report' },
+  { to: '/user/financial-report',icon: BookOpen,    label: 'Financial Summary' },
 ]
 const OWNER_ONLY_NAV = [
-  { to: '/user/family-members',  icon: Users,       label: 'Family Members' },
+  { to: '/user/family-members',  icon: Users,       label: 'My Family Members' },
 ]
 
 export default function UserSidebar({

@@ -106,7 +106,7 @@ function OwnerTable({ owners, search }) {
       <table className="w-full">
         <thead className="border-b border-[#bfdbf7] bg-white/50">
           <tr>
-            {['S.No', 'Owner', 'Flat', 'Sq. Ft', 'Rate/Sq.Ft', 'Maintenance Amount', 'Paid', 'Pending', 'Status'].map(h => (
+            {['#', 'Resident Name', 'Flat / Villa', 'Sq. Ft', 'Rate per Sq. Ft', 'Maintenance Amount', 'Amount Paid', 'Pending Balance', 'Status'].map(h => (
               <th key={h} className="table-header">{h}</th>
             ))}
           </tr>
@@ -249,7 +249,7 @@ export default function MaintenanceList() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="section-title text-xl">Monthly Maintenance Summary</h1>
+          <h1 className="section-title text-xl">Monthly Maintenance Billing Summary</h1>
           <p className="section-subtitle">
             Per-owner maintenance breakdown for {monthLabel}
           </p>
@@ -317,26 +317,26 @@ export default function MaintenanceList() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in">
         <SummaryCard
           icon={IndianRupee}
-          label="Total Maintenance Due"
+          label="Total Maintenance Amount Due"
           value={formatCurrency(grandTotal)}
           sub={`${totalOwners} owners`}
           highlight
         />
         <SummaryCard
           icon={Building2}
-          label="Flat Owners Total"
+          label="Total Due — Flat Owners"
           value={formatCurrency(totalFlat)}
           sub={`${flatOwners.length} flat owner${flatOwners.length !== 1 ? 's' : ''}`}
         />
         <SummaryCard
           icon={Home}
-          label="Villa Owners Total"
+          label="Total Due — Villa Owners"
           value={formatCurrency(totalVilla)}
           sub={`${villaOwners.length} villa owner${villaOwners.length !== 1 ? 's' : ''}`}
         />
         <SummaryCard
           icon={Users}
-          label="Paid vs Total Owners"
+          label="Payment Completion Rate"
           value={`${totalPaid} / ${totalOwners}`}
           sub={`${totalUnpaid} pending`}
         />
@@ -349,7 +349,7 @@ export default function MaintenanceList() {
 
       {/* Flat Owners section */}
       <Section
-        title="Flat Owners"
+        title="Flat Owner Billing"
         icon={Building2}
         owners={flatOwners}
         search={search}
@@ -360,7 +360,7 @@ export default function MaintenanceList() {
 
       {/* Villa Owners section */}
       <Section
-        title="Villa Owners"
+        title="Villa Owner Billing"
         icon={Home}
         owners={villaOwners}
         search={search}

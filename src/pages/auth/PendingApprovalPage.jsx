@@ -165,7 +165,7 @@ export default function PendingApprovalPage() {
                 <div className="space-y-3">
                   <div className="p-3 bg-green-950/20 rounded-xl border border-green-900/30">
                     <p className="text-xs text-green-300 font-medium">
-                      🎉 Your account is ready to use!
+                       Your account is ready to use!
                     </p>
                     <p className="text-[11px] text-[#1f7a8c] mt-1">
                       Log in using your registered email and password.

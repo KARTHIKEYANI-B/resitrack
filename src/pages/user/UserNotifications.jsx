@@ -18,10 +18,10 @@ const P = {
 
 const TYPE_META = {
   PAYMENT_REMINDER:     { icon: CreditCard,    color: '#d97706', bg: '#fffbeb', label: 'Payment Reminder' },
-  PENDING_DUE:          { icon: AlertCircle,   color: '#dc2626', bg: '#fef2f2', label: 'Due Warning' },
+  PENDING_DUE:          { icon: AlertCircle,   color: '#dc2626', bg: '#fef2f2', label: 'Payment Due Alert' },
   REMINDER:             { icon: Clock,         color: '#d97706', bg: '#fffbeb', label: 'Reminder' },
   ANNOUNCEMENT:         { icon: Bell,          color: P.secondary, bg: P.accent, label: 'Announcement' },
-  COMPLAINT_REPLY:      { icon: MessageSquare, color: '#16a34a', bg: '#f0fdf4', label: 'Reply' },
+  COMPLAINT_REPLY:      { icon: MessageSquare, color: '#16a34a', bg: '#f0fdf4', label: 'Complaint Reply' },
   REGISTRATION:         { icon: CheckCircle,   color: P.primary,   bg: P.accent, label: 'Registration' },
   PAYMENT:              { icon: CreditCard,    color: '#16a34a', bg: '#f0fdf4', label: 'Payment' },
   PAYMENT_APPROVED:     { icon: CheckCircle,   color: '#16a34a', bg: '#f0fdf4', label: 'Approved' },
@@ -122,7 +122,7 @@ export default function UserNotifications() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="section-title text-xl">Notifications & Complaints</h1>
+          <h1 className="section-title text-xl">My Notifications & Complaints</h1>
           <p className="section-subtitle">
             {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
             {openCount > 0 && ` · ${openCount} complaint${openCount > 1 ? 's' : ''} pending`}
@@ -142,7 +142,7 @@ export default function UserNotifications() {
       <div className="flex p-1 rounded-xl w-fit" style={{ background: P.accent }}>
         {[
           { key: 'notifications', label: 'Notifications', count: unreadCount },
-          { key: 'complaints',    label: 'My Complaints', count: openCount },
+          { key: 'complaints',    label: 'My Complaints & Requests', count: openCount },
         ].map(({ key, label, count }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"

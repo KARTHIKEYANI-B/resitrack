@@ -234,7 +234,7 @@ export default function Receipts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="section-title text-xl">Receipts</h1>
-          <p className="section-subtitle">Payment receipts for all verified transactions</p>
+          <p className="section-subtitle">Payment receipts for all verified and approved transactions</p>
         </div>
         <button onClick={load} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
@@ -268,7 +268,7 @@ export default function Receipts() {
               <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Receipt No.', 'Owner', 'Flat', 'Billing Month', 'Amount', 'Late Fee', 'Date', 'Method', 'Actions'].map(h => (
+                    {['Receipt No.', 'Resident Name', 'Flat / Villa', 'Billing Month', 'Amount Paid', 'Late Fee', 'Payment Date', 'Payment Method', 'Actions'].map(h => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>

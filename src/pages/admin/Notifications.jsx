@@ -14,9 +14,9 @@ import toast from 'react-hot-toast'
 const TYPE_META = {
   COMPLAINT:            { icon: MessageSquare, color: 'text-red-400',    bg: 'bg-red-950/30',    label: 'Complaint' },
   PAYMENT_RECEIVED:     { icon: CreditCard,    color: 'text-green-400',  bg: 'bg-green-950/30',  label: 'Payment' },
-  PAYMENT_VERIFICATION: { icon: Clock,         color: 'text-yellow-400', bg: 'bg-yellow-950/30', label: 'Verify Payment' },
-  FEE_WARNING:          { icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-950/30', label: 'Fee Warning' },
-  PENDING_DUE:          { icon: AlertTriangle, color: 'text-orange-400', bg: 'bg-orange-950/30', label: 'Pending Due' },
+  PAYMENT_VERIFICATION: { icon: Clock,         color: 'text-yellow-400', bg: 'bg-yellow-950/30', label: 'Payment Verification' },
+  FEE_WARNING:          { icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-950/30', label: 'Late Fee Warning' },
+  PENDING_DUE:          { icon: AlertTriangle, color: 'text-orange-400', bg: 'bg-orange-950/30', label: 'Pending Due Alert' },
   ANNOUNCEMENT:         { icon: Info,          color: 'text-[#022b3a]/60',   bg: 'bg-[#e1e5f2]',  label: 'Announcement' },
   PAYMENT_REMINDER:     { icon: Bell,          color: 'text-[#022b3a]/60',   bg: 'bg-[#e1e5f2]',  label: 'Reminder' },
   REGISTRATION:         { icon: CheckCircle,   color: 'text-[#1f7a8c]',      bg: 'bg-[#e1e5f2]',  label: 'Registration' },
@@ -131,7 +131,7 @@ export default function AdminNotifications() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="section-title text-xl">Notifications</h1>
+          <h1 className="section-title text-xl">Notification Centre</h1>
           <p className="section-subtitle">
             {unreadCount > 0
               ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
@@ -266,7 +266,7 @@ export default function AdminNotifications() {
       </div>
 
       {/* ── Compose modal ── */}
-      <Modal isOpen={composeOpen} onClose={() => setComposeOpen(false)} title="Send Notification to Owners">
+      <Modal isOpen={composeOpen} onClose={() => setComposeOpen(false)} title="Send Notification to Residents">
         <div className="space-y-4">
           <div>
             <label className="label">Audience</label>

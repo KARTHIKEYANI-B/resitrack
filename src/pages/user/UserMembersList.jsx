@@ -172,7 +172,7 @@ export default function UserMembersList() {
           <Users size={20} color="#fff" />
         </div>
         <div>
-          <h1 className="text-xl font-bold" style={{ color: P.dark }}>Members List</h1>
+          <h1 className="text-xl font-bold" style={{ color: P.dark }}>Community Members</h1>
           <p className="text-xs" style={{ color: P.muted }}>
             R R Dhurya Owners Welfare Association — Committee Members
           </p>

@@ -43,15 +43,15 @@ export default function PaymentHistory() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="section-title text-xl">Payment History</h1>
-        <p className="section-subtitle">All your maintenance payment records</p>
+        <p className="section-subtitle">Complete history of all your maintenance payments</p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Paid',     value: formatCurrency(totalPaid) },
-          { label: 'Total Payments', value: payments.length },
-          { label: 'This Year',      value: payments.filter(p => p.paymentDate?.startsWith(new Date().getFullYear())).length },
+          { label: 'Total Amount Paid',     value: formatCurrency(totalPaid) },
+          { label: 'Total Payment Records', value: payments.length },
+          { label: 'Payments This Year',      value: payments.filter(p => p.paymentDate?.startsWith(new Date().getFullYear())).length },
         ].map(({ label, value }) => (
           <div key={label} className="card card-hover text-center py-4">
             <p className="text-lg font-bold text-[#022b3a] font-mono">{value}</p>
@@ -63,7 +63,7 @@ export default function PaymentHistory() {
       {/* Table */}
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
-          <h2 className="text-sm font-semibold text-[#022b3a]">All Transactions</h2>
+          <h2 className="text-sm font-semibold text-[#022b3a]">All Payment Transactions</h2>
           <div className="flex items-center gap-2 flex-wrap">
             <FilterSelect value={monthFilter} onChange={setMonth}
               options={MONTHS.map((m, i) => ({ value: i + 1, label: m }))}
@@ -90,7 +90,7 @@ export default function PaymentHistory() {
                       REQUIREMENT: 'Month' column removed from All Transactions table.
                       Remaining columns: Payment Date, Amount, Late Fee, Method, Transaction ID, Status
                     */}
-                    {['Payment Date', 'Amount', 'Late Fee', 'Method', 'Transaction ID', 'Status'].map(h => (
+                    {['Payment Date', 'Amount Paid', 'Late Fee', 'Payment Method', 'Transaction / Reference ID', 'Payment Status'].map(h => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>

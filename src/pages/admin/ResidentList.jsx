@@ -120,7 +120,7 @@ function PopulationSummary() {
     { label: 'Family Members',       value: pop?.totalFamilyMembers ?? 0, icon: Users,      color: '#E65100' },
     { label: '— With App Access',    value: pop?.familyMembersWithAccess ?? 0, icon: Wifi,  color: '#1565C0', indent: true },
     { label: 'Admins',               value: pop?.totalAdmins ?? 0,        icon: Shield,     color: '#880E4F' },
-    { label: 'Active Login Users',   value: pop?.totalActiveUsers ?? 0,   icon: Activity,   color: '#2E7D32' },
+    { label: 'Active Portal Users',   value: pop?.totalActiveUsers ?? 0,   icon: Activity,   color: '#2E7D32' },
   ]
 
   return (
@@ -415,12 +415,12 @@ export default function ResidentList() {
       {/* Header + tab switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: P.dark }}>Residents</h1>
+          <h1 className="text-xl font-bold" style={{ color: P.dark }}>Resident Management</h1>
           <p className="text-xs" style={{ color: P.muted }}>Property owners and apartment population</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex rounded-xl p-1 gap-1" style={{ background: P.accent, border: `1px solid ${P.border}` }}>
-            {[{ key: 'residents', label: 'Directory', icon: Users }, { key: 'population', label: 'Population', icon: BarChart2 }].map(t => (
+            {[{ key: 'residents', label: 'Resident Directory', icon: Users }, { key: 'population', label: 'Population Overview', icon: BarChart2 }].map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                 style={{ background: tab === t.key ? P.primary : 'transparent', color: tab === t.key ? '#fff' : P.body }}>
@@ -442,9 +442,9 @@ export default function ResidentList() {
         <>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Total Active Owners', value: residents.length },
-              { label: 'Flats',               value: residents.filter(r => r.propertyType === 'FLAT').length },
-              { label: 'Villas',              value: residents.filter(r => r.propertyType === 'VILLA').length },
+              { label: 'Total Active Residents', value: residents.length },
+              { label: 'Flat Owners',               value: residents.filter(r => r.propertyType === 'FLAT').length },
+              { label: 'Villa Owners',              value: residents.filter(r => r.propertyType === 'VILLA').length },
             ].map(({ label, value }) => (
               <div key={label} className="bg-white rounded-2xl text-center py-4 border" style={{ borderColor: P.border }}>
                 <p className="text-2xl font-bold font-mono" style={{ color: P.dark }}>{value}</p>

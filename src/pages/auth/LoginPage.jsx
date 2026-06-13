@@ -170,9 +170,6 @@ export default function LoginPage() {
             className="px-6 pt-6 pb-4"
             style={{ borderBottom: `1px solid ${P.border}`, background: P.accent + '66' }}>
             <h2 className="text-base font-bold" style={{ color: P.dark }}>Sign In</h2>
-            <p className="text-xs mt-0.5" style={{ color: P.muted }}>
-              Enter your credentials — you'll be directed to the right dashboard automatically.
-            </p>
           </div>
 
           {/* Form */}
@@ -251,7 +248,7 @@ export default function LoginPage() {
                 )}
               </div>
               <span className="text-xs" style={{ color: P.muted }}>
-                Remember me for 30 days
+                Remember me
               </span>
             </label>
 
@@ -277,9 +274,9 @@ export default function LoginPage() {
                   Register here
                 </Link>
               </p>
-              <p className="text-[10px]" style={{ color: P.border }}>
+              {/* <p className="text-[10px]" style={{ color: P.border }}>
                 Admin &amp; Security accounts are created by the Super Admin only.
-              </p>
+              </p> */}
             </div>
           </form>
         </div>

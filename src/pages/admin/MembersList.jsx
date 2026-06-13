@@ -9,7 +9,6 @@ import { memberAPI } from '../../api/memberAPI'
 import { adminAPI } from '../../api/adminAPI'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
-import SecuritySection from './SecuritySection'
 
 const P = {
   primary: '#007979', secondary: '#24B1B1',
@@ -880,7 +879,7 @@ export default function AdminMembersList() {
             <Users size={20} color="#fff" />
           </div>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: P.dark }}>Members List</h1>
+            <h1 className="text-xl font-bold" style={{ color: P.dark }}>Community Members</h1>
             <p className="text-xs" style={{ color: P.muted }}>Association Committee · Position-Based Admin Accounts</p>
           </div>
         </div>
@@ -929,9 +928,8 @@ export default function AdminMembersList() {
       <div className="flex items-center gap-1 mb-5 p-1 rounded-xl w-fit"
         style={{ background: P.accent, border: `1px solid ${P.border}` }}>
         {[
-          { key: 'committee', label: 'Committee', icon: Users },
-          { key: 'assignments', label: 'Active Assignments', icon: History },
-          { key: 'security', label: 'Security', icon: Shield },
+          { key: 'committee', label: 'Committee Members', icon: Users },
+          { key: 'assignments', label: 'Current Position Holders', icon: History },
         ].map(t => (
           <button key={t.key} onClick={() => setViewMode(t.key)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -1021,11 +1019,6 @@ export default function AdminMembersList() {
             ))}
           </div>
         )
-      )}
-
-      {/* ── Security section ──────────────────────────────────────────── */}
-      {viewMode === 'security' && (
-        <SecuritySection />
       )}
 
       {/* ── Modals ────────────────────────────────────────────────────── */}

@@ -21,9 +21,9 @@ function monthLabel(ym) {
 function StatusPill({ status }) {
   const map = {
     PAID:                 { cls: 'bg-green-950/40 border-green-800/50 text-green-400',   label: 'PAID' },
-    PENDING_VERIFICATION: { cls: 'bg-yellow-950/40 border-yellow-800/50 text-yellow-400', label: 'PENDING VERIFY' },
+    PENDING_VERIFICATION: { cls: 'bg-yellow-950/40 border-yellow-800/50 text-yellow-400', label: 'PENDING VERIFICATION' },
     OVERDUE:              { cls: 'bg-red-950/40 border-red-800/50 text-red-400',          label: 'OVERDUE' },
-    PENDING:              { cls: 'bg-[#e1e5f2] border-[#bfdbf7] text-[#022b3a]/60',       label: 'UNPAID' },
+    PENDING:              { cls: 'bg-[#e1e5f2] border-[#bfdbf7] text-[#022b3a]/60',       label: 'UNPAID THIS MONTH' },
   }
   const c = map[status] || map.PENDING
   return (
@@ -115,7 +115,7 @@ export default function UserDashboard() {
         <div className="card card-hover">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <p className="stat-label">Current Month Due</p>
+              <p className="stat-label">This Month's Maintenance Due</p>
               <p className={`text-2xl font-bold font-mono mt-1 ${
                 isPaid ? 'text-green-400' : isOverdue ? 'text-red-400' : 'text-[#022b3a]'
               }`}>
@@ -157,7 +157,7 @@ export default function UserDashboard() {
         <div className="card card-hover">
           <div className="flex items-start justify-between">
             <div>
-              <p className="stat-label">Payment Status</p>
+              <p className="stat-label">Current Payment Status</p>
               <div className="mt-2">
                 <StatusPill status={s.paymentStatus || 'PENDING'} />
               </div>
@@ -184,7 +184,7 @@ export default function UserDashboard() {
         <div className="card card-hover">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <p className="stat-label">Last Payment</p>
+              <p className="stat-label">Last Payment Received</p>
               <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">
                 {s.lastPaymentAmount ? formatCurrency(s.lastPaymentAmount) : '—'}
               </p>
@@ -204,7 +204,7 @@ export default function UserDashboard() {
         <div className="card card-hover">
           <div className="flex items-start justify-between">
             <div>
-              <p className="stat-label">Total Paid (All Time)</p>
+              <p className="stat-label">Total Amount Paid (All Time)</p>
               <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">
                 {formatCurrency(totalPaid)}
               </p>
@@ -222,10 +222,10 @@ export default function UserDashboard() {
         <h2 className="text-sm font-semibold text-[#022b3a] mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rt-stat-grid">
           {[
-            { label: 'Pay Maintenance',  path: '/user/maintenance',     icon: CreditCard },
+            { label: 'Pay Maintenance Bill',  path: '/user/maintenance',     icon: CreditCard },
             { label: 'Payment History',  path: '/user/payment-history', icon: Clock },
-            { label: 'Pending Dues',     path: '/user/pending-dues',    icon: AlertCircle },
-            { label: 'My Receipts',      path: '/user/receipts',        icon: Receipt },
+            { label: 'Outstanding Dues',     path: '/user/pending-dues',    icon: AlertCircle },
+            { label: 'My Payment Receipts',      path: '/user/receipts',        icon: Receipt },
           ].map(({ label, path, icon: Icon }) => (
             <button
               key={path}

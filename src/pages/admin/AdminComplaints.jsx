@@ -108,9 +108,9 @@ function ComplaintRow({ complaint, onUpdate }) {
           {/* Full detail grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Owner Name',   value: complaint.residentName },
+              { label: 'Resident Name',   value: complaint.residentName },
               { label: 'Flat / Villa', value: complaint.flatNumber + (complaint.flatType ? ` (${complaint.flatType})` : '') },
-              { label: 'Submitted',    value: formatDateTime(complaint.createdAt) },
+              { label: 'Submitted On',    value: formatDateTime(complaint.createdAt) },
               { label: 'Status',       value: sm.label },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-xl p-2.5" style={{ background: P.accent }}>
@@ -148,7 +148,7 @@ function ComplaintRow({ complaint, onUpdate }) {
           {/* Update form */}
           <div className="space-y-3 pt-2" style={{ borderTop: `1px solid ${P.border}` }}>
             <div>
-              <label className="label">Update Status</label>
+              <label className="label">Update Complaint Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)}
                 className="input-field" style={{ background: '#fff' }}>
                 <option value="OPEN">Open</option>
@@ -158,7 +158,7 @@ function ComplaintRow({ complaint, onUpdate }) {
               </select>
             </div>
             <div>
-              <label className="label">Reply to Owner (optional)</label>
+              <label className="label">Reply to Resident (optional)</label>
               <textarea value={reply} onChange={e => setReply(e.target.value)}
                 placeholder="Type your response to the resident..."
                 rows={3} className="input-field resize-none" />
@@ -231,7 +231,7 @@ export default function AdminComplaints() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="section-title">Complaint Management</h1>
+          <h1 className="section-title">Resident Complaint Management</h1>
           <p className="section-subtitle">
             {stats
               ? `${stats.total ?? 0} total · ${stats.open ?? 0} open · ${stats.resolved ?? 0} resolved`
@@ -246,10 +246,10 @@ export default function AdminComplaints() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Open"        value={stats.open       ?? 0} color="#d97706" />
-          <StatCard label="In Progress" value={stats.inProgress ?? 0} color="#2563eb" />
-          <StatCard label="Resolved"    value={stats.resolved   ?? 0} color="#16a34a" />
-          <StatCard label="Closed"      value={stats.closed     ?? 0} color={P.muted} />
+          <StatCard label="Open Complaints"        value={stats.open       ?? 0} color="#d97706" />
+          <StatCard label="Under Review" value={stats.inProgress ?? 0} color="#2563eb" />
+          <StatCard label="Resolved Complaints"    value={stats.resolved   ?? 0} color="#16a34a" />
+          <StatCard label="Closed Complaints"      value={stats.closed     ?? 0} color={P.muted} />
         </div>
       )}
 

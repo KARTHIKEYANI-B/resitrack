@@ -456,7 +456,7 @@ export default function FamilyMembersPage() {
             <Users size={20} color="#fff" />
           </div>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: P.dark }}>My Family Members</h1>
+            <h1 className="text-xl font-bold" style={{ color: P.dark }}>My Family Members & Dependants</h1>
             <p className="text-xs" style={{ color: P.muted }}>
               Flat {user?.flatNumber} · {members.length} member{members.length !== 1 ? 's' : ''}
             </p>

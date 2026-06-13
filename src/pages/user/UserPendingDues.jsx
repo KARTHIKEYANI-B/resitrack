@@ -56,7 +56,7 @@ export default function UserPendingDues() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="section-title text-xl">My Outstanding Dues</h1>
-          <p className="section-subtitle">Your outstanding maintenance balances</p>
+          <p className="section-subtitle">Your outstanding maintenance dues and unpaid balances</p>
         </div>
         <button onClick={fetchDues} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh
@@ -90,7 +90,7 @@ export default function UserPendingDues() {
               <div className="card card-hover">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="stat-label">Total Pending</p>
+                    <p className="stat-label">Total Outstanding Balance</p>
                     <p className="stat-value mt-1 text-red-400">{formatCurrency(totalPending)}</p>
                     <p className="text-xs text-[#1f7a8c] mt-1">Outstanding balance</p>
                   </div>
@@ -100,7 +100,7 @@ export default function UserPendingDues() {
               <div className="card card-hover">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="stat-label">Amount Paid</p>
+                    <p className="stat-label">Total Amount Paid</p>
                     <p className="stat-value mt-1 text-green-400">{formatCurrency(totalPaid)}</p>
                     <p className="text-xs text-[#1f7a8c] mt-1">Payments received</p>
                   </div>
@@ -110,7 +110,7 @@ export default function UserPendingDues() {
               <div className="card card-hover">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="stat-label">Months Pending</p>
+                    <p className="stat-label">Months with Pending Dues</p>
                     <p className="stat-value mt-1">{dues.length}</p>
                     <p className="text-xs text-[#1f7a8c] mt-1">
                       {hasOverdue ? 'Includes overdue months' : 'Pending months'}
@@ -138,7 +138,7 @@ export default function UserPendingDues() {
           {/* Dues Table / Cards */}
           <div className="card p-0 overflow-hidden">
             <div className="px-4 py-3 border-b border-[#bfdbf7]">
-              <h2 className="text-sm font-semibold text-[#022b3a]">Outstanding Due Breakdown</h2>
+              <h2 className="text-sm font-semibold text-[#022b3a]">Month-wise Outstanding Dues Breakdown</h2>
             </div>
 
             {/* Desktop Table */}
@@ -146,7 +146,7 @@ export default function UserPendingDues() {
               <table className="w-full">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Month', 'Assigned Amount', 'Paid', 'Pending Balance', 'Due Date', 'Status'].map(h => (
+                    {['Billing Month', 'Maintenance Amount', 'Amount Paid', 'Outstanding Balance', 'Payment Due Date', 'Status'].map(h => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>

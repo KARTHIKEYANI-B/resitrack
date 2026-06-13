@@ -303,8 +303,8 @@ export default function MaintenanceManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="section-title">Maintenance Management</h1>
-          <p className="section-subtitle">Create maintenance batches and assign to residents</p>
+          <h1 className="section-title">Maintenance Batch Management</h1>
+          <p className="section-subtitle">Create and manage maintenance billing batches for residents</p>
         </div>
         <div className="flex gap-2">
           <button onClick={loadBatches} className="btn-secondary flex items-center gap-2 text-xs">
@@ -319,7 +319,7 @@ export default function MaintenanceManagement() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          [Wrench,      'Active Batches', activeBatches],
+          [Wrench,      'Total Active Batches', activeBatches],
           [Users,       'Total Assigned', totalAssigned],
           [CheckCircle, 'Paid',           totalPaid],
           [Clock,       'Pending',        totalPending],
@@ -334,7 +334,7 @@ export default function MaintenanceManagement() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-cyan-200">
-        {[['batches', 'Maintenance Batches'], ['config', 'Rate Configuration']].map(([key, lbl]) => (
+        {[['batches', 'Total Active Batches'], ['config', 'Maintenance Rate Settings']].map(([key, lbl]) => (
           <button key={key} onClick={() => setTab(key)}
             className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
               tab === key ? 'border-sky-500 text-sky-700' : 'border-transparent text-sky-400 hover:text-sky-700'
@@ -409,7 +409,7 @@ export default function MaintenanceManagement() {
                 <table className="w-full min-w-[500px]">
                   <thead className="border-b border-cyan-200 bg-cyan-50">
                     <tr>
-                      {['Type', 'Rate/Sq.Ft', 'Fixed Amt', 'Due Date', 'Late Fee', ''].map(h => (
+                      {['Property Type', 'Rate per Sq. Ft', 'Fixed Amount', 'Due Date', 'Late Fee', 'Actions'].map(h => (
                         <th key={h} className="table-header">{h}</th>
                       ))}
                     </tr>
@@ -453,7 +453,7 @@ export default function MaintenanceManagement() {
       )}
 
       {/* ══ CREATE BATCH MODAL ══════════════════════════════════════ */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Create Maintenance Batch" size="lg">
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Create New Maintenance Batch" size="lg">
         <div className="space-y-4">
 
           {/* Title + Category */}
@@ -491,7 +491,7 @@ export default function MaintenanceManagement() {
             {!sqFtMode ? (
               /* Fixed amount input */
               <div>
-                <label className="label">Amount per Unit (₹) *</label>
+                <label className="label">Fixed Amount per Unit (₹) *</label>
                 <div className="relative max-w-xs">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 text-sm font-medium">₹</span>
                   <input type="number" value={form.amount} onChange={e => patch('amount', e.target.value)}

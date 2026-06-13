@@ -17,10 +17,10 @@ const P = {
 
 const TABS = [
   { key: 'profile',   label: 'Profile',          icon: User },
-  { key: 'insurance', label: 'Vehicle Insurance', icon: Shield },
-  { key: 'taxes',     label: 'Taxes Reminder',   icon: FileText },
+  { key: 'insurance', label: 'Vehicle Insurance Reminder', icon: Shield },
+  { key: 'taxes',     label: 'Tax Payment Reminder',   icon: FileText },
   { key: 'password',  label: 'Change Password',   icon: Lock },
-  { key: 'notify',    label: 'Notifications',     icon: Bell },
+  { key: 'notify',    label: 'Notification Preferences',     icon: Bell },
 ]
 
 // ── Profile Photo Section ─────────────────────────────────────────────────

@@ -61,8 +61,8 @@ export default function UserFinancialReport() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="section-title text-xl">Financial Summary</h1>
-          <p className="section-subtitle">Monthly collection and expense overview</p>
+          <h1 className="section-title text-xl">Community Financial Summary</h1>
+          <p className="section-subtitle">Monthly maintenance collection and expense overview for the community</p>
         </div>
         <div className="flex items-center gap-2">
           <ShieldCheck size={14} className="text-[#1f7a8c]" />

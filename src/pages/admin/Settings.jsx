@@ -6,8 +6,8 @@ import toast from 'react-hot-toast'
 
 // General tab REMOVED from TABS array
 const TABS = [
-  { key: 'fees',      label: 'Fees & Penalty',  icon: DollarSign },
-  { key: 'apartment', label: 'Apartment Info',   icon: Building2 },
+  { key: 'fees',      label: 'Fees & Penalty Rules',  icon: DollarSign },
+  { key: 'apartment', label: 'Association Details',   icon: Building2 },
   { key: 'password',  label: 'Change Password',  icon: Lock },
 ]
 
@@ -95,7 +95,7 @@ export default function AdminSettings() {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div>
         <h1 className="section-title text-xl">Settings</h1>
-        <p className="section-subtitle">Configure fees, apartment details, and account security</p>
+        <p className="section-subtitle">Configure fees, penalty rules, association details, and account security</p>
       </div>
 
       {/* Tab Navigation — General tab REMOVED */}
@@ -113,7 +113,7 @@ export default function AdminSettings() {
       {/* Fees & Penalty Tab */}
       {activeTab === 'fees' && (
         <div className="card space-y-5">
-          <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Fees & Penalty Configuration</h2>
+          <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Fees & Penalty Rules Configuration</h2>
           <div className="grid grid-cols-2 gap-4">
             <FieldGroup label="Penalty Percentage (%)">
               <Input value={fees.penaltyPercentage} placeholder="e.g. 5"
@@ -135,7 +135,7 @@ export default function AdminSettings() {
       {/* Apartment Info Tab */}
       {activeTab === 'apartment' && (
         <div className="card space-y-5">
-          <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Apartment Details</h2>
+          <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Association & Apartment Details</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <FieldGroup label="Association Name">

@@ -50,7 +50,7 @@ const fmt = (v) => {
 function StatusBadge({ status }) {
   const map = {
     PAID:                 { cls: 'bg-green-950/50 border-green-800/50 text-green-400',    icon: ShieldCheck,    label: 'Paid' },
-    PENDING_VERIFICATION: { cls: 'bg-yellow-950/50 border-yellow-800/50 text-yellow-400', icon: Clock,          label: 'Awaiting Verify' },
+    PENDING_VERIFICATION: { cls: 'bg-yellow-950/50 border-yellow-800/50 text-yellow-400', icon: Clock,          label: 'Awaiting Verification' },
     PENDING:              { cls: 'bg-[#e1e5f2] border-[#bfdbf7] text-[#022b3a]/50',       icon: Shield,         label: 'Pending' },
     OVERDUE:              { cls: 'bg-red-950/50 border-red-800/50 text-red-400',           icon: AlertTriangle,  label: 'Overdue' },
   }
@@ -171,33 +171,33 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="label">Owner Name *</label>
+            <label className="label">Resident Name *</label>
             <input value={form.ownerName} onChange={e => set('ownerName', e.target.value)} placeholder="Full name" className="input-field" />
             <Err f="ownerName" />
           </div>
           <div>
-            <label className="label">Phone Number *</label>
+            <label className="label">Mobile Number *</label>
             <input value={form.ownerPhone} onChange={e => set('ownerPhone', e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="10-digit mobile" className="input-field font-mono" maxLength={10} />
             <Err f="ownerPhone" />
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="label">Billing Month *</label>
+            <label className="label">Billing Month / Period *</label>
             <select value={form.paymentMonth} onChange={e => set('paymentMonth', e.target.value)} className="input-field">
               {MONTH_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <Err f="paymentMonth" />
           </div>
           <div>
-            <label className="label">Amount (₹) *</label>
+            <label className="label">Payment Amount (₹) *</label>
             <input type="number" value={form.paidAmount} onChange={e => set('paidAmount', e.target.value)} placeholder="e.g. 3500" className="input-field font-mono" min="1" />
             <Err f="paidAmount" />
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="label">Payment Mode *</label>
+            <label className="label">Payment Method *</label>
             <select value={form.paymentMode} onChange={e => set('paymentMode', e.target.value)} className="input-field">
               {PAYMENT_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
@@ -209,11 +209,11 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
           </div>
         </div>
         <div>
-          <label className="label">Transaction ID (optional)</label>
+          <label className="label">Transaction / Reference ID (optional)</label>
           <input value={form.transactionId} onChange={e => set('transactionId', e.target.value)} placeholder="UPI ref / bank ref" className="input-field font-mono" />
         </div>
         <div>
-          <label className="label">Description (optional)</label>
+          <label className="label">Remarks (optional)</label>
           <input value={form.description} onChange={e => set('description', e.target.value)} placeholder="Notes" className="input-field" />
         </div>
         <label className="flex items-center gap-3 p-3 bg-[#e1e5f2]/50 rounded-xl border border-[#bfdbf7] cursor-pointer hover:bg-[#bfdbf7]/40 transition-all">
@@ -354,7 +354,7 @@ export default function PaymentTracking() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="section-title text-xl">Payment Tracking</h1>
+          <h1 className="section-title text-xl">Payment Management</h1>
           <p className="section-subtitle">
             Monitor and verify all maintenance payments · {new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}
           </p>
@@ -445,7 +445,7 @@ export default function PaymentTracking() {
               <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Resident', 'Flat', 'Amount', 'Status', 'Date', 'Method', 'Verify'].map(h => (
+                    {['Resident Name', 'Flat / Villa', 'Amount', 'Payment Status', 'Payment Date', 'Payment Method', 'Actions'].map(h => (
                       <th key={h} className="table-header text-xs">{h}</th>
                     ))}
                   </tr>

@@ -118,19 +118,19 @@ export default function PendingDues() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           {
-            label: 'Total Outstanding Amount',
+            label: 'Total Outstanding Balance',
             value: formatCurrency(totalPendingAmount),
             icon:  IndianRupee,
             sub:   `Across ${unpaidCount} resident${unpaidCount !== 1 ? 's' : ''}`,
           },
           {
-            label: 'Overdue Residents',
+            label: 'Residents with Overdue Payments',
             value: `${overdueCount} resident${overdueCount !== 1 ? 's' : ''}`,
             icon:  Home,
             sub:   'Remaining due + past due date',
           },
           {
-            label: 'Monthly Collection Rate',
+            label: 'Overall Collection Rate',
             value: `${collectionRate}%`,
             icon:  TrendingDown,
             sub:   `${paidCount} of ${totalActiveOwners} active owners paid`,
@@ -174,8 +174,8 @@ export default function PendingDues() {
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
                     {[
-                      'Resident', 'Flat', 'Month',
-                      'Assigned', 'Paid', 'Pending', 'Due Date',
+                      'Resident Name', 'Flat / Villa', 'Billing Month',
+                      'Amount Assigned', 'Amount Paid', 'Balance Due', 'Due Date',
                       'Status', 'Actions'
                     ].map(h => (
                       <th key={h} className="table-header">{h}</th>
