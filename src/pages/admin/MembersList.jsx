@@ -548,16 +548,17 @@ function RevokeModal({ assignment, onClose, onSave }) {
 }
 
 
-// ── Admin Accounts Panel — Reset Password (Task 1 support) ───────────────────
-// Super Admin can view all admin accounts and reset any password instantly.
-// No current password needed — Super Admin override.
+// ── Admin Accounts Panel — Reset Password + Delete (Task 1 / Task 3 support) ──
+// Super Admin / President can view all admin accounts, reset passwords,
+// and delete stale/duplicate accounts directly from the UI.
 function AdminAccountsPanel() {
-  const [accounts,    setAccounts]    = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [resetTarget, setResetTarget] = useState(null) // { id, name, email }
-  const [newPassword, setNewPassword] = useState('')
-  const [showPw,      setShowPw]      = useState(false)
-  const [saving,      setSaving]      = useState(false)
+  const [accounts,      setAccounts]      = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [resetTarget,   setResetTarget]   = useState(null) // { id, name, email }
+  const [deleteTarget,  setDeleteTarget]  = useState(null) // { id, name, email }
+  const [newPassword,   setNewPassword]   = useState('')
+  const [showPw,        setShowPw]        = useState(false)
+  const [saving,        setSaving]        = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -593,6 +594,20 @@ function AdminAccountsPanel() {
     }
   }
 
+  const handleDelete = async () => {
+    setSaving(true)
+    try {
+      await axiosInstance.delete(`/admin/accounts/${deleteTarget.id}`)
+      toast.success(`Account '${deleteTarget.email}' deleted`)
+      setDeleteTarget(null)
+      load()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -601,7 +616,7 @@ function AdminAccountsPanel() {
           Admin Account Management
         </h2>
         <p className="text-xs mt-0.5" style={{ color: P.muted }}>
-          View all admin accounts and reset passwords. Super Admin only.
+          Manage admin accounts — reset passwords and remove duplicates. Super Admin / President only.
         </p>
       </div>
 
@@ -659,12 +674,23 @@ function AdminAccountsPanel() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                      style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
-                      <Key size={11} /> Reset Password
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
+                        <Key size={11} /> Reset Password
+                      </button>
+                      {/* Delete only shown for non-superAdmin accounts to prevent accidental self-lockout */}
+                      {!acc.superAdmin && (
+                        <button
+                          onClick={() => setDeleteTarget(acc)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -743,6 +769,56 @@ function AdminAccountsPanel() {
                   ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   : <Key size={14} />}
                 {saving ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(26,46,46,0.55)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+            style={{ border: `1px solid ${P.border}` }}>
+            <div className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: `1px solid ${P.border}`, background: '#fef2f2' }}>
+              <div className="flex items-center gap-2">
+                <Trash2 size={16} style={{ color: '#dc2626' }} />
+                <p className="text-sm font-semibold text-red-700">Delete Admin Account</p>
+              </div>
+              <button onClick={() => setDeleteTarget(null)}
+                className="p-1 rounded-lg hover:bg-red-100" style={{ color: P.muted }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="p-3 rounded-xl" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+                <p className="text-xs font-semibold text-red-700">This action cannot be undone.</p>
+                <p className="text-xs text-red-600 mt-1">
+                  Account: <span className="font-mono font-bold">{deleteTarget.email}</span>
+                </p>
+                <p className="text-xs text-red-600">Name: {deleteTarget.name}</p>
+              </div>
+              <p className="text-xs" style={{ color: P.muted }}>
+                All assignment history rows for this account will also be removed.
+                Use this to clean up duplicate or stale admin accounts.
+              </p>
+            </div>
+
+            <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${P.border}` }}>
+              <button onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2 rounded-xl text-sm font-medium border"
+                style={{ borderColor: P.border, color: P.muted }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={saving}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 bg-red-600">
+                {saving
+                  ? <div className="w-4 h-4 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                  : <Trash2 size={14} />}
+                {saving ? 'Deleting…' : 'Confirm Delete'}
               </button>
             </div>
           </div>
@@ -1171,10 +1247,11 @@ export default function AdminMembersList() {
       <div className="flex items-center gap-1 mb-5 p-1 rounded-xl w-fit"
         style={{ background: P.accent, border: `1px solid ${P.border}` }}>
         {[
-          { key: 'committee',  label: 'Committee',         icon: Users    },
-          { key: 'assignments', label: 'Active Assignments', icon: History  },
-          { key: 'security',    label: 'Security',           icon: Shield   },
-          { key: 'accounts',    label: 'Admin Accounts',     icon: Key      },
+          { key: 'committee',   label: 'Committee',          icon: Users   },
+          { key: 'assignments', label: 'Active Assignments',  icon: History },
+          { key: 'security',    label: 'Security',            icon: Shield  },
+          // Admin Accounts tab — visible to Super Admin / President only
+          ...(isSuperAdmin ? [{ key: 'accounts', label: 'Admin Accounts', icon: Key }] : []),
         ].map(t => (
           <button key={t.key} onClick={() => setViewMode(t.key)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"

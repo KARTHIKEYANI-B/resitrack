@@ -20,6 +20,7 @@ import {
   CheckCircle, UserX, Send
 } from 'lucide-react'
 import { securityAdminAPI } from '../../api/securityAPI'
+import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
 const P = {
@@ -287,7 +288,7 @@ function MessageModal({ guard, onClose }) {
 }
 
 // ── Security Guard Card ───────────────────────────────────────────────────────
-function GuardCard({ guard, onEdit, onDelete, onMessage }) {
+function GuardCard({ guard, canManage, onEdit, onDelete, onMessage }) {
   return (
     <div className="bg-white rounded-2xl p-5 flex flex-col gap-3 transition-shadow hover:shadow-md"
       style={{ border: `1px solid ${P.border}` }}>
@@ -319,23 +320,27 @@ function GuardCard({ guard, onEdit, onDelete, onMessage }) {
         </div>
       </div>
 
-      {/* Action row */}
+      {/* Action row — Message is visible to all admins; Edit/Delete only for Super Admin/President */}
       <div className="flex gap-2 pt-2" style={{ borderTop: `1px solid ${P.border}` }}>
         <button onClick={() => onMessage(guard)}
           className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
           style={{ color: P.primary, background: P.accent }}>
           <Send size={11} /> Message
         </button>
-        <button onClick={() => onEdit(guard)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-          style={{ color: P.secondary, background: '#e0f7f7' }}>
-          <Edit2 size={11} /> Edit
-        </button>
-        <button onClick={() => onDelete(guard)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-          style={{ color: '#dc2626', background: '#fef2f2' }}>
-          <Trash2 size={11} /> Delete
-        </button>
+        {canManage && (
+          <>
+            <button onClick={() => onEdit(guard)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{ color: P.secondary, background: '#e0f7f7' }}>
+              <Edit2 size={11} /> Edit
+            </button>
+            <button onClick={() => onDelete(guard)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{ color: '#dc2626', background: '#fef2f2' }}>
+              <Trash2 size={11} /> Delete
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -343,6 +348,7 @@ function GuardCard({ guard, onEdit, onDelete, onMessage }) {
 
 // ── Main Security Section ─────────────────────────────────────────────────────
 export default function SecuritySection() {
+  const { isSuperAdmin } = useAuth()
   const [guards,  setGuards]  = useState([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
@@ -390,15 +396,19 @@ export default function SecuritySection() {
             Security Accounts
           </h2>
           <p className="text-xs mt-0.5" style={{ color: P.muted }}>
-            Manage security guard login accounts · {guards.length} account(s)
+            {isSuperAdmin
+              ? `Manage security guard login accounts · ${guards.length} account(s)`
+              : `Security guard accounts · ${guards.length} account(s) · View only`}
           </p>
         </div>
-        <button
-          onClick={() => setModal({ type: 'create' })}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ background: P.primary }}>
-          <Plus size={14} /> Create Security Account
-        </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => setModal({ type: 'create' })}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: P.primary }}>
+            <Plus size={14} /> Create Security Account
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -439,6 +449,7 @@ export default function SecuritySection() {
             <GuardCard
               key={g.id}
               guard={g}
+              canManage={isSuperAdmin}
               onEdit={guard => setModal({ type: 'edit', guard })}
               onDelete={handleDelete}
               onMessage={guard => setModal({ type: 'message', guard })}
@@ -447,14 +458,14 @@ export default function SecuritySection() {
         </div>
       )}
 
-      {/* Modals */}
-      {modal?.type === 'create' && (
+      {/* Modals — create/edit only reachable by Super Admin/President */}
+      {modal?.type === 'create' && isSuperAdmin && (
         <GuardModal
           onClose={() => setModal(null)}
           onSave={() => { setModal(null); load() }}
         />
       )}
-      {modal?.type === 'edit' && modal.guard && (
+      {modal?.type === 'edit' && modal.guard && isSuperAdmin && (
         <GuardModal
           guard={modal.guard}
           onClose={() => setModal(null)}
