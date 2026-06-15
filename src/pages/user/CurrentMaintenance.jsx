@@ -42,9 +42,8 @@ export default function CurrentMaintenance() {
   const [loading,          setLoading]          = useState(true)
   const [billModal,        setBillModal]        = useState(false)
   const [paymentModal,     setPaymentModal]     = useState(false)
-  const [selectedMethod,   setSelectedMethod]   = useState(null) // 'GPAY' | 'CASH' | 'BANK_TRANSFER'
+  const [selectedMethod,   setSelectedMethod]   = useState(null) 
 
-  // Shared form fields
   const [form,             setForm]             = useState({
     name: '', phoneNumber: '', paymentAmount: '',
     // GPAY
@@ -82,7 +81,6 @@ export default function CurrentMaintenance() {
     load()
   }, [])
 
-  // Load active admins when CASH is selected
   useEffect(() => {
     if (selectedMethod === 'CASH' && activeAdmins.length === 0) {
       setAdminsLoading(true)

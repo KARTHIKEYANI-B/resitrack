@@ -3,12 +3,14 @@ import {
   Users, Plus, Edit2, Trash2, ArrowRightLeft,
   Phone, Mail, Calendar, Shield, ShieldCheck, UserCircle2,
   X, Save, AlertTriangle, Search, UserPlus, UserMinus,
-  Key, CheckCircle, Clock, History
+  Key, CheckCircle, Clock, History, Eye, EyeOff, RefreshCw
 } from 'lucide-react'
 import { memberAPI } from '../../api/memberAPI'
 import { adminAPI } from '../../api/adminAPI'
+import axiosInstance from '../../api/axios'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
+import SecuritySection from './SecuritySection'
 
 const P = {
   primary: '#007979', secondary: '#24B1B1',
@@ -25,13 +27,16 @@ const POSITIONS = [
   { value: 'TREASURER',       label: 'Treasurer' },
 ]
 
-/** Canonical position email map — must match AdminAssignmentService.POSITION_EMAILS */
+/**
+ * Canonical position email map — must match AdminAssignmentService.POSITION_EMAILS
+ * and MemberService.resolvePositionEmail() exactly.
+ */
 const POSITION_EMAILS = {
-  PRESIDENT:       'admin.president@apartment.com',
+  PRESIDENT:       'superadmin@gmail.com',
   VICE_PRESIDENT:  'admin.vicepresident@apartment.com',
-  SECRETARY:       'admin.secretary@apartment.com',
-  JOINT_SECRETARY: 'admin.jointsecretary@apartment.com',
-  TREASURER:       'admin.treasurer@apartment.com',
+  SECRETARY:       'secretary@gmail.com',
+  JOINT_SECRETARY: 'joinsecratery@gmail.com',
+  TREASURER:       'treasurer@gmail.com',
 }
 
 const POSITION_COLORS = {
@@ -542,20 +547,323 @@ function RevokeModal({ assignment, onClose, onSave }) {
   )
 }
 
+
+// ── Admin Accounts Panel — Reset Password + Delete (Task 1 / Task 3 support) ──
+// Super Admin / President can view all admin accounts, reset passwords,
+// and delete stale/duplicate accounts directly from the UI.
+function AdminAccountsPanel() {
+  const [accounts,         setAccounts]         = useState([])
+  const [callerIsSuperAdmin, setCallerIsSuperAdmin] = useState(false)
+  const [loading,          setLoading]          = useState(true)
+  const [resetTarget,      setResetTarget]      = useState(null) // { id, name, email }
+  const [deleteTarget,     setDeleteTarget]     = useState(null) // { id, name, email }
+  const [newPassword,      setNewPassword]      = useState('')
+  const [showPw,           setShowPw]           = useState(false)
+  const [saving,           setSaving]           = useState(false)
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const res = await axiosInstance.get('/admin/accounts')
+      // The backend returns one of two shapes depending on which version is deployed:
+      //   Old: { data: [ {...}, ... ] }                       → res.data.data is an array
+      //   New: { data: { accounts: [...], callerIsSuperAdmin: bool } } → res.data.data is an object
+      // Always extract a guaranteed array and never call .map() on a non-array.
+      const payload = res.data?.data
+      if (Array.isArray(payload)) {
+        // Old backend shape — flat array
+        setAccounts(payload)
+      } else if (payload && Array.isArray(payload.accounts)) {
+        // New backend shape — wrapped object
+        setAccounts(payload.accounts)
+        setCallerIsSuperAdmin(payload.callerIsSuperAdmin ?? false)
+      } else {
+        setAccounts([])
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to load admin accounts')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleReset = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await axiosInstance.put(`/admin/accounts/${resetTarget.id}/reset-password`, {
+        newPassword,
+      })
+      // The backend echoes the email and name of the account that was actually updated.
+      // Show the email in the toast so Super Admin can confirm the correct account was reset.
+      const updated = res.data?.data
+      const label = updated?.email || resetTarget.email
+      toast.success(`Password reset — login email: ${label}`)
+      setResetTarget(null)
+      setNewPassword('')
+      load() // refresh the list to reflect forcePasswordChange=false
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Reset failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setSaving(true)
+    try {
+      await axiosInstance.delete(`/admin/accounts/${deleteTarget.id}`)
+      toast.success(`Account '${deleteTarget.email}' deleted`)
+      setDeleteTarget(null)
+      load()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-bold flex items-center gap-2" style={{ color: P.dark }}>
+          <Key size={16} style={{ color: P.primary }} />
+          Admin Account Management
+        </h2>
+        <p className="text-xs mt-0.5" style={{ color: P.muted }}>
+          Manage admin accounts — reset passwords and remove duplicates. Super Admin / President only.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center min-h-32">
+          <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: P.primary, borderTopColor: 'transparent' }} />
+        </div>
+      ) : (
+        <div className="rounded-2xl overflow-hidden"
+          style={{ border: `1px solid ${P.border}` }}>
+          <table className="w-full">
+            <thead>
+              <tr style={{ background: P.primary }}>
+                {['Name', 'Email', 'Position', 'Role', 'Actions'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {accounts.map((acc, i) => (
+                <tr key={acc.id}
+                  className="border-t"
+                  style={{ borderColor: P.border, background: i % 2 === 0 ? P.surface : '#fff' }}>
+                  <td className="px-4 py-3 text-sm font-medium" style={{ color: P.dark }}>
+                    {acc.name}
+                    {acc.superAdmin && (
+                      <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ background: P.primary + '20', color: P.primary }}>
+                        SUPER ADMIN
+                      </span>
+                    )}
+                    {acc.forcePasswordChange && (
+                      <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ background: '#fef3c7', color: '#d97706' }}>
+                        MUST CHANGE PWD
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-mono" style={{ color: P.muted }}>
+                    {acc.email}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: P.body }}>
+                    {acc.position
+                      ? acc.position.replace(/_/g, ' ')
+                      : <span style={{ color: P.muted }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className="px-2 py-0.5 rounded-full font-semibold"
+                      style={{
+                        background: acc.superAdmin ? P.primary + '15' : P.accent,
+                        color: acc.superAdmin ? P.primary : P.body,
+                      }}>
+                      {acc.superAdmin ? 'Super Admin' : 'Admin'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
+                        <Key size={11} /> Reset Password
+                      </button>
+                      {/* Delete only shown for non-superAdmin accounts to prevent accidental self-lockout */}
+                      {!acc.superAdmin && (
+                        <button
+                          onClick={() => setDeleteTarget(acc)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(26,46,46,0.55)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+            style={{ border: `1px solid ${P.border}` }}>
+            <div className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: `1px solid ${P.border}`, background: P.accent }}>
+              <div className="flex items-center gap-2">
+                <Key size={16} style={{ color: P.primary }} />
+                <p className="text-sm font-semibold" style={{ color: P.dark }}>
+                  Reset Password
+                </p>
+              </div>
+              <button onClick={() => setResetTarget(null)}
+                className="p-1 rounded-lg hover:bg-white/60"
+                style={{ color: P.muted }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="p-3 rounded-xl" style={{ background: P.surface, border: `1px solid ${P.border}` }}>
+                <p className="text-xs font-semibold" style={{ color: P.dark }}>{resetTarget.name}</p>
+                <p className="text-xs font-mono mt-0.5" style={{ color: P.muted }}>{resetTarget.email}</p>
+                {resetTarget.position && (
+                  <p className="text-[10px] mt-0.5" style={{ color: P.secondary }}>
+                    {resetTarget.position.replace(/_/g, ' ')}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                  New Password <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="w-full px-3 pr-10 py-2.5 rounded-xl text-sm border outline-none"
+                    style={{ borderColor: P.border, color: P.dark }}
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: P.secondary }}>
+                    {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: P.muted }}>
+                  No current password needed. This is a Super Admin override reset.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${P.border}` }}>
+              <button onClick={() => setResetTarget(null)}
+                className="flex-1 py-2 rounded-xl text-sm font-medium border"
+                style={{ borderColor: P.border, color: P.muted }}>
+                Cancel
+              </button>
+              <button onClick={handleReset} disabled={saving}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ background: P.primary }}>
+                {saving
+                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <Key size={14} />}
+                {saving ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(26,46,46,0.55)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+            style={{ border: `1px solid ${P.border}` }}>
+            <div className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: `1px solid ${P.border}`, background: '#fef2f2' }}>
+              <div className="flex items-center gap-2">
+                <Trash2 size={16} style={{ color: '#dc2626' }} />
+                <p className="text-sm font-semibold text-red-700">Delete Admin Account</p>
+              </div>
+              <button onClick={() => setDeleteTarget(null)}
+                className="p-1 rounded-lg hover:bg-red-100" style={{ color: P.muted }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="p-3 rounded-xl" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
+                <p className="text-xs font-semibold text-red-700">This action cannot be undone.</p>
+                <p className="text-xs text-red-600 mt-1">
+                  Account: <span className="font-mono font-bold">{deleteTarget.email}</span>
+                </p>
+                <p className="text-xs text-red-600">Name: {deleteTarget.name}</p>
+              </div>
+              <p className="text-xs" style={{ color: P.muted }}>
+                All assignment history rows for this account will also be removed.
+                Use this to clean up duplicate or stale admin accounts.
+              </p>
+            </div>
+
+            <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${P.border}` }}>
+              <button onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2 rounded-xl text-sm font-medium border"
+                style={{ borderColor: P.border, color: P.muted }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={saving}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 bg-red-600">
+                {saving
+                  ? <div className="w-4 h-4 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                  : <Trash2 size={14} />}
+                {saving ? 'Deleting…' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Member Modal (Add / Edit — existing, unchanged) ───────────────────────────
 function MemberModal({ member, residents, onClose, onSave }) {
   const isEdit = !!member?.id && !member?.placeholder
   const [form, setForm] = useState({
-    residentId:  member?.residentId  || '',
-    position:    member?.position    || '',
-    name:        member?.name        || '',
-    photoUrl:    member?.photoUrl    || '',
-    phoneNumber: member?.phoneNumber || '',
-    email:       member?.email       || '',
-    joinedDate:  member?.joinedDate  || '',
-    active:      member?.active !== false,
+    residentId:   member?.residentId  || '',
+    position:     member?.position    || '',
+    name:         member?.name        || '',
+    photoUrl:     member?.photoUrl    || '',
+    phoneNumber:  member?.phoneNumber || '',
+    email:        member?.email       || '',
+    joinedDate:   member?.joinedDate  || '',
+    active:       member?.active !== false,
+    adminPassword: '',   // Task 2: Super Admin can set the position admin account password
   })
-  const [saving, setSaving] = useState(false)
+  const [saving,  setSaving]  = useState(false)
+  const [showPw,  setShowPw]  = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -583,8 +891,9 @@ function MemberModal({ member, residents, onClose, onSave }) {
     try {
       const payload = {
         ...form,
-        residentId: form.residentId || null,
-        joinedDate: form.joinedDate || null,
+        residentId:    form.residentId    || null,
+        joinedDate:    form.joinedDate    || null,
+        adminPassword: form.adminPassword || null,
       }
       if (isEdit) {
         await memberAPI.updateMember(member.id, payload)
@@ -668,6 +977,36 @@ function MemberModal({ member, residents, onClose, onSave }) {
               placeholder="https://..."
               className="w-full px-3 py-2 rounded-xl text-sm border outline-none"
               style={{ borderColor: P.border, color: P.dark }} />
+          </div>
+
+          {/* ── Task 2: Admin Account Password ── */}
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+              Position Admin Account Password
+              <span className="ml-1 text-[10px] font-normal" style={{ color: P.muted }}>
+                {isEdit ? '(leave blank to keep existing password)' : '(optional — sets login password for the position account)'}
+              </span>
+            </label>
+            <div className="relative">
+              <Key size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.secondary }} />
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={form.adminPassword}
+                onChange={e => set('adminPassword', e.target.value)}
+                placeholder={isEdit ? 'Enter new password or leave blank' : 'e.g. Admin@123'}
+                className="w-full pl-9 pr-10 py-2 rounded-xl text-sm border outline-none"
+                style={{ borderColor: P.border, color: P.dark }}
+              />
+              <button type="button" onClick={() => setShowPw(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                style={{ color: P.secondary }}>
+                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <p className="text-[10px] mt-1" style={{ color: P.muted }}>
+              This sets the password for the committee position login account (e.g. admin.president@apartment.com).
+              Min. 6 characters.
+            </p>
           </div>
 
           <div>
@@ -879,7 +1218,7 @@ export default function AdminMembersList() {
             <Users size={20} color="#fff" />
           </div>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: P.dark }}>Community Members</h1>
+            <h1 className="text-xl font-bold" style={{ color: P.dark }}>Members List</h1>
             <p className="text-xs" style={{ color: P.muted }}>Association Committee · Position-Based Admin Accounts</p>
           </div>
         </div>
@@ -928,8 +1267,11 @@ export default function AdminMembersList() {
       <div className="flex items-center gap-1 mb-5 p-1 rounded-xl w-fit"
         style={{ background: P.accent, border: `1px solid ${P.border}` }}>
         {[
-          { key: 'committee', label: 'Committee Members', icon: Users },
-          { key: 'assignments', label: 'Current Position Holders', icon: History },
+          { key: 'committee',   label: 'Committee',          icon: Users   },
+          { key: 'assignments', label: 'Active Assignments',  icon: History },
+          { key: 'security',    label: 'Security',            icon: Shield  },
+          // Admin Accounts tab — visible to Super Admin / President only
+          ...(isSuperAdmin ? [{ key: 'accounts', label: 'Admin Accounts', icon: Key }] : []),
         ].map(t => (
           <button key={t.key} onClick={() => setViewMode(t.key)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -1019,6 +1361,16 @@ export default function AdminMembersList() {
             ))}
           </div>
         )
+      )}
+
+      {/* ── Security section ──────────────────────────────────────────── */}
+      {viewMode === 'security' && (
+        <SecuritySection />
+      )}
+
+      {/* ── Admin Accounts — Reset Password (Task 1 + Task 2 support) ── */}
+      {viewMode === 'accounts' && (
+        <AdminAccountsPanel />
       )}
 
       {/* ── Modals ────────────────────────────────────────────────────── */}
