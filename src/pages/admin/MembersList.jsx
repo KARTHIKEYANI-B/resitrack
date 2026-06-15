@@ -581,17 +581,12 @@ function AdminAccountsPanel() {
     }
     setSaving(true)
     try {
-      const res = await axiosInstance.put(`/admin/accounts/${resetTarget.id}/reset-password`, {
+      await axiosInstance.put(`/admin/accounts/${resetTarget.id}/reset-password`, {
         newPassword,
       })
-      // The backend echoes the email and name of the account that was actually updated.
-      // Show the email in the toast so Super Admin can confirm the correct account was reset.
-      const updated = res.data?.data
-      const label = updated?.email || resetTarget.email
-      toast.success(`Password reset — login email: ${label}`)
+      toast.success(`Password reset for ${resetTarget.name}`)
       setResetTarget(null)
       setNewPassword('')
-      load() // refresh the list to reflect forcePasswordChange=false
     } catch (err) {
       toast.error(err.response?.data?.message || 'Reset failed')
     } finally {
@@ -774,56 +769,6 @@ function AdminAccountsPanel() {
                   ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   : <Key size={14} />}
                 {saving ? 'Resetting…' : 'Reset Password'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Account Confirmation Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(26,46,46,0.55)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
-            style={{ border: `1px solid ${P.border}` }}>
-            <div className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: `1px solid ${P.border}`, background: '#fef2f2' }}>
-              <div className="flex items-center gap-2">
-                <Trash2 size={16} style={{ color: '#dc2626' }} />
-                <p className="text-sm font-semibold text-red-700">Delete Admin Account</p>
-              </div>
-              <button onClick={() => setDeleteTarget(null)}
-                className="p-1 rounded-lg hover:bg-red-100" style={{ color: P.muted }}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="px-6 py-5 space-y-4">
-              <div className="p-3 rounded-xl" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
-                <p className="text-xs font-semibold text-red-700">This action cannot be undone.</p>
-                <p className="text-xs text-red-600 mt-1">
-                  Account: <span className="font-mono font-bold">{deleteTarget.email}</span>
-                </p>
-                <p className="text-xs text-red-600">Name: {deleteTarget.name}</p>
-              </div>
-              <p className="text-xs" style={{ color: P.muted }}>
-                All assignment history rows for this account will also be removed.
-                Use this to clean up duplicate or stale admin accounts.
-              </p>
-            </div>
-
-            <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${P.border}` }}>
-              <button onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2 rounded-xl text-sm font-medium border"
-                style={{ borderColor: P.border, color: P.muted }}>
-                Cancel
-              </button>
-              <button onClick={handleDelete} disabled={saving}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 bg-red-600">
-                {saving
-                  ? <div className="w-4 h-4 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
-                  : <Trash2 size={14} />}
-                {saving ? 'Deleting…' : 'Confirm Delete'}
               </button>
             </div>
           </div>
