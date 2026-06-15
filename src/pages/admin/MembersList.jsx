@@ -581,12 +581,17 @@ function AdminAccountsPanel() {
     }
     setSaving(true)
     try {
-      await axiosInstance.put(`/admin/accounts/${resetTarget.id}/reset-password`, {
+      const res = await axiosInstance.put(`/admin/accounts/${resetTarget.id}/reset-password`, {
         newPassword,
       })
-      toast.success(`Password reset for ${resetTarget.name}`)
+      // The backend echoes the email and name of the account that was actually updated.
+      // Show the email in the toast so Super Admin can confirm the correct account was reset.
+      const updated = res.data?.data
+      const label = updated?.email || resetTarget.email
+      toast.success(`Password reset — login email: ${label}`)
       setResetTarget(null)
       setNewPassword('')
+      load() // refresh the list to reflect forcePasswordChange=false
     } catch (err) {
       toast.error(err.response?.data?.message || 'Reset failed')
     } finally {
