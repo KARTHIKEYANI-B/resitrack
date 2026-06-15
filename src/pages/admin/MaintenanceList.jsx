@@ -290,17 +290,17 @@ export default function MaintenanceList() {
       </div>
 
       {/* Status legend */}
-      <div className="flex flex-wrap gap-3 text-xs">
+      {/* <div className="flex flex-wrap gap-3 text-xs">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
           <CheckCircle size={11} /> PAID – Pending Amount = ₹0
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-600 border border-red-200">
           <XCircle size={11} /> UNPAID – Balance remaining
         </span>
-      </div>
+      </div> */}
 
       {/* Formula info */}
-      {ratePerSqFt && (
+      {/* {ratePerSqFt && (
         <div className="flex items-start gap-3 p-3 bg-sky-50 border border-sky-200 rounded-xl">
           <Calculator size={14} className="text-sky-600 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-sky-700">
@@ -311,7 +311,7 @@ export default function MaintenanceList() {
             Pending Amount = 0 → PAID (includes Family Member payments)
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in">
