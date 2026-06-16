@@ -191,7 +191,7 @@ export default function ResidentApprovalPage() {
               </span>
             )}
           </div>
-          <p className="section-subtitle">Review and process incoming resident registration requests</p>
+          {/* <p className="section-subtitle">Review and process incoming resident registration requests</p> */}
         </div>
         <button onClick={fetchList} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh

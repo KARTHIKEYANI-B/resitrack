@@ -21,16 +21,6 @@ function currentYM() {
   return { year: d.getFullYear(), month: d.getMonth() + 1 }
 }
 
-/*
- * STATUS STYLE MAP
- *
- * Backend status values (from MaintenanceService.buildOwnerDTOs):
- *   "PAID"   – pendingAmount == 0  (owner or FM or combination paid in full)
- *   "UNPAID" – pendingAmount >  0  (any outstanding balance, including partial payments)
- *
- * Rule: pendingAmount == 0 ALWAYS shows PAID.
- *       pendingAmount >  0 ALWAYS shows UNPAID (two-state model, PARTIAL removed).
- */
 const STATUS_STYLE = {
   PAID:    'bg-green-100 text-green-700 border-green-200',
   UNPAID:  'bg-red-100 text-red-600 border-red-200',
@@ -46,17 +36,6 @@ const STATUS_ICON = {
   OVERDUE: <AlertCircle size={11} />,
 }
 
-/**
- * Derive the canonical two-state status from the owner DTO.
- * pendingAmount is the source of truth:
- *   pendingAmount == 0 or backend status == 'PAID' → PAID
- *   pendingAmount >  0                              → UNPAID
- *
- * The backend (MaintenanceService.buildOwnerDTOs) snaps any sub-paisa
- * pending value (< 0.005) to 0.00 and sets paymentStatus = "PAID", so
- * both signals always agree. We check BOTH here as a belt-and-suspenders
- * guard against any stale cached data.
- */
 function resolveStatus(owner) {
   // Primary: trust the backend status string — it's set after the tolerance snap
   const backendStatus = (owner.paymentStatus ?? '').toUpperCase()
@@ -106,7 +85,7 @@ function OwnerTable({ owners, search }) {
       <table className="w-full">
         <thead className="border-b border-[#bfdbf7] bg-white/50">
           <tr>
-            {['#', 'Resident Name', 'Flat / Villa', 'Sq. Ft', 'Rate per Sq. Ft', 'Maintenance Amount', 'Amount Paid', 'Pending Balance', 'Status'].map(h => (
+            {['S.No', 'Resident Name', 'Flat / Villa', 'Sq. Ft', 'Rate per Sq. Ft', 'Maintenance Amount', 'Amount Paid', 'Pending Balance', 'Status'].map(h => (
               <th key={h} className="table-header">{h}</th>
             ))}
           </tr>
@@ -134,11 +113,11 @@ function OwnerTable({ owners, search }) {
                 </td>
                 <td className="table-cell font-mono text-xs font-semibold text-[#022b3a]">
                   {formatCurrency(o.maintenanceAmount ?? 0)}
-                  {o.sqFt && o.ratePerSqFt && (
+                  {/* {o.sqFt && o.ratePerSqFt && (
                     <p className="text-[9px] text-[#1f7a8c] font-normal mt-0.5">
                       {Number(o.sqFt).toLocaleString('en-IN')} × ₹{Number(o.ratePerSqFt).toFixed(2)}
                     </p>
-                  )}
+                  )} */}
                 </td>
                 {/* Paid amount – green; shows property-level total (owner + FM) */}
                 <td className="table-cell font-mono text-xs text-green-600">

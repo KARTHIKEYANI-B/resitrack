@@ -95,7 +95,7 @@ export default function AdminSettings() {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div>
         <h1 className="section-title text-xl">Settings</h1>
-        <p className="section-subtitle">Configure fees, penalty rules, association details, and account security</p>
+        {/* <p className="section-subtitle">Configure fees, penalty rules, association details, and account security</p> */}
       </div>
 
       {/* Tab Navigation — General tab REMOVED */}

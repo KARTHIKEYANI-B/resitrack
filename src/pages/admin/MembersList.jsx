@@ -1219,7 +1219,7 @@ export default function AdminMembersList() {
           </div>
           <div>
             <h1 className="text-xl font-bold" style={{ color: P.dark }}>Members List</h1>
-            <p className="text-xs" style={{ color: P.muted }}>Association Committee · Position-Based Admin Accounts</p>
+            <p className="text-xs" style={{ color: P.muted }}>Association Committee </p>
           </div>
         </div>
 

@@ -159,10 +159,10 @@ function CategoryManagerModal({ open, onClose, onCategoriesChanged }) {
           )}
         </div>
 
-        <p className="text-[11px] text-[#1f7a8c]">
+        {/* <p className="text-[11px] text-[#1f7a8c]">
           Deleting a category keeps existing expense records unchanged (historical data preserved).
           Renaming updates all existing expense records automatically.
-        </p>
+        </p> */}
 
         <button onClick={onClose} className="btn-secondary w-full">Done</button>
       </div>
@@ -264,7 +264,7 @@ export default function ExpenseManagement() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="section-title text-xl">Expense Management</h1>
-          <p className="section-subtitle">Track all apartment operational expenses</p>
+          {/* <p className="section-subtitle">Track all apartment operational expenses</p> */}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setCatMgrOpen(true)}

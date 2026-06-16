@@ -380,14 +380,14 @@ export default function MaintenanceManagement() {
       {tab === 'config' && (
         <div className="space-y-3">
           {/* Info banner — Feature 1 */}
-          <div className="flex gap-2 bg-sky-50 border border-sky-200 rounded-xl px-3 py-2.5">
+          {/* <div className="flex gap-2 bg-sky-50 border border-sky-200 rounded-xl px-3 py-2.5">
             <Calculator size={13} className="text-sky-500 flex-shrink-0 mt-0.5" />
             <p className="text-[11px] text-sky-600 leading-relaxed">
               <strong>Rate Per Sq.Ft:</strong> When configured, the Create Batch modal offers a
               "Calculate by Sq.Ft" mode — each owner's charge is automatically calculated as
               <em> Rate × their registered Sq.Ft</em>. Fixed Amount works as before.
             </p>
-          </div>
+          </div> */}
 
           <div className="flex justify-end">
             <button

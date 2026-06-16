@@ -234,7 +234,7 @@ export default function Receipts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="section-title text-xl">Receipts</h1>
-          <p className="section-subtitle">Payment receipts for all verified and approved transactions</p>
+          {/* <p className="section-subtitle">Payment receipts for all verified and approved transactions</p> */}
         </div>
         <button onClick={load} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={13} /> Refresh

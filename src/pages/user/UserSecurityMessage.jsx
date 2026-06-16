@@ -51,9 +51,9 @@ export default function UserSecurityMessage() {
           <Shield size={20} style={{ color: P.primary }} />
           Message Security
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: P.muted }}>
+        {/* <p className="text-xs mt-0.5" style={{ color: P.muted }}>
           Send a direct message to a security guard on duty.
-        </p>
+        </p> */}
       </div>
 
       {/* Compose card */}

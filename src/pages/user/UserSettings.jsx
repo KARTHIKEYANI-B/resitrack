@@ -355,16 +355,16 @@ export default function UserSettings() {
             <Shield size={16} style={{ color: P.primary }} />
             <h2 className="text-sm font-bold" style={{ color: P.dark }}>Vehicle Insurance</h2>
           </div>
-          <p className="text-xs" style={{ color: P.muted }}>
+          {/* <p className="text-xs" style={{ color: P.muted }}>
             Store your vehicle insurance details. You will receive a reminder notification exactly
             <strong> 2 days before</strong> the expiry date.
-          </p>
+          </p> */}
 
-          <div className="flex items-start gap-2 p-3 rounded-xl text-xs"
+          {/* <div className="flex items-start gap-2 p-3 rounded-xl text-xs"
             style={{ background: '#FFF9E6', border: '1px solid #F5C518', color: '#856404' }}>
             <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
             All fields are optional. A reminder is sent only when Expiry Date is set.
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
