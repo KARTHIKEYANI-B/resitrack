@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, User, ChevronDown, LogOut, Settings, Edit2, Eye, Menu } from 'lucide-react'
+import { Bell, User, ChevronDown, LogOut, Settings, Edit2, Eye, Menu, ClipboardCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { adminAPI } from '../../api/adminAPI'
 import toast from 'react-hot-toast'
@@ -10,16 +10,21 @@ const P = { primary: '#007979', secondary: '#24B1B1', accent: '#FFE0C5', border:
 const BTN_T = 'background-color 0.14s ease, transform 0.16s cubic-bezier(0.34,1.56,0.64,1)'
 
 export default function AdminNavbar({ sidebarWidth = 240, isMobile = false, onMenuClick }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [unreadCount,  setUnreadCount]  = useState(0)
+  const [dropdownOpen,         setDropdownOpen]         = useState(false)
+  const [unreadCount,          setUnreadCount]          = useState(0)
+  const [pendingVerifications, setPendingVerifications] = useState(0)
   const { user, logout }                = useAuth()
   const navigate                        = useNavigate()
   const dropdownRef                     = useRef(null)
 
   const fetchUnread = useCallback(async () => {
     try {
-      const res = await adminAPI.getUnreadNotificationCount()
-      setUnreadCount(res.data?.data?.count ?? 0)
+      const [nRes, vRes] = await Promise.allSettled([
+        adminAPI.getUnreadNotificationCount(),
+        adminAPI.getVerificationPendingCount(),
+      ])
+      if (nRes.status === 'fulfilled') setUnreadCount(nRes.value.data?.data?.count ?? 0)
+      if (vRes.status === 'fulfilled') setPendingVerifications(vRes.value.data?.data?.count ?? 0)
     } catch {}
   }, [])
 
@@ -67,6 +72,27 @@ export default function AdminNavbar({ sidebarWidth = 240, isMobile = false, onMe
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Payment Verification badge — only shown when there are pending requests */}
+        {pendingVerifications > 0 && (
+          <button
+            onClick={() => navigate('/admin/payment-verification')}
+            className="relative p-2 rounded-xl"
+            title="Pending payment verifications"
+            style={{ color: P.primary, transition: BTN_T }}
+            onMouseEnter={e => { e.currentTarget.style.background = P.accent; e.currentTarget.style.transform = 'scale(1.1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'scale(1)' }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.88)' }}
+          >
+            <ClipboardCheck size={17} />
+            <span
+              className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none"
+              style={{ background: '#f59e0b', animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both, badgePulse 2s ease 0.5s infinite' }}
+            >
+              {pendingVerifications > 99 ? '99+' : pendingVerifications}
+            </span>
+          </button>
+        )}
+
         {/* Bell */}
         <button
           onClick={() => { navigate('/admin/notifications'); setUnreadCount(0) }}

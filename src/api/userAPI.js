@@ -98,4 +98,11 @@ export const userAPI = {
 
   /** Remove profile photo (revert to default avatar). */
   removeProfilePhoto: () => axiosInstance.delete('/user/profile/photo'),
+
+  // ── Security Messaging ────────────────────────────────────────────────
+  /** List active security guards (for the message recipient picker). */
+  getSecurityGuards:        ()                  => axiosInstance.get('/user/security/guards'),
+
+  /** Owner / Family Member sends a message to a specific security guard. */
+  sendMessageToSecurity:    (guardId, data)     => axiosInstance.post(`/user/security/${guardId}/message`, data),
 }

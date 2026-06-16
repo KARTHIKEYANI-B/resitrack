@@ -38,6 +38,7 @@ import UserFinancialReport from './pages/user/UserFinancialReport'
 import UserNotifications   from './pages/user/UserNotifications'
 import UserSettings        from './pages/user/UserSettings'
 import UserMembersList     from './pages/user/UserMembersList'
+import UserSecurityMessage from './pages/user/UserSecurityMessage'
 
 // Security Layout + Pages
 import SecurityLayout        from './pages/security/SecurityLayout'
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="receipts"         element={<UserReceipts />} />
             <Route path="financial-report" element={<UserFinancialReport />} />
             <Route path="notifications"    element={<UserNotifications />} />
+            <Route path="security-message" element={<UserSecurityMessage />} />
             <Route path="settings"         element={<UserSettings />} />
           </Route>
 

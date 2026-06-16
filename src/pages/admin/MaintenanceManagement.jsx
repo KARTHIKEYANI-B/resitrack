@@ -304,7 +304,7 @@ export default function MaintenanceManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title">Maintenance Batch Management</h1>
-          <p className="section-subtitle">Create and manage maintenance billing batches for residents</p>
+          {/* <p className="section-subtitle">Create and manage maintenance billing batches for residents</p> */}
         </div>
         <div className="flex gap-2">
           <button onClick={loadBatches} className="btn-secondary flex items-center gap-2 text-xs">

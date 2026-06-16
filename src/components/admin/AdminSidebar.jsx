@@ -24,19 +24,21 @@ export default function AdminSidebar({
   onMobileClose= () => {},
   onNavClick   = () => {},
 }) {
-  const [pendingCount,   setPendingCount]   = useState(0)
-  const [unreadNotifs,   setUnreadNotifs]   = useState(0)
-  const [openComplaints, setOpenComplaints] = useState(0)
+  const [pendingCount,        setPendingCount]        = useState(0)
+  const [unreadNotifs,        setUnreadNotifs]        = useState(0)
+  const [openComplaints,      setOpenComplaints]      = useState(0)
+  const [pendingVerifications, setPendingVerifications] = useState(0)
   const { logout } = useAuth()
   const navigate   = useNavigate()
 
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const [aRes, nRes, cRes] = await Promise.allSettled([
+        const [aRes, nRes, cRes, vRes] = await Promise.allSettled([
           adminAPI.getApprovalCount(),
           adminAPI.getUnreadNotificationCount(),
           adminAPI.getComplaintStats(),
+          adminAPI.getVerificationPendingCount(),
         ])
         if (aRes.status === 'fulfilled') setPendingCount(aRes.value.data?.data?.pending ?? 0)
         if (nRes.status === 'fulfilled') setUnreadNotifs(nRes.value.data?.data?.count  ?? 0)
@@ -44,10 +46,11 @@ export default function AdminSidebar({
           const d = cRes.value.data?.data ?? cRes.value.data
           setOpenComplaints((d?.open ?? 0) + (d?.inProgress ?? 0))
         }
+        if (vRes.status === 'fulfilled') setPendingVerifications(vRes.value.data?.data?.count ?? 0)
       } catch {}
     }
     fetchBadges()
-    const id = setInterval(fetchBadges, 60_000)
+    const id = setInterval(fetchBadges, 30_000)
     return () => clearInterval(id)
   }, [])
 
@@ -62,7 +65,7 @@ export default function AdminSidebar({
     { to: '/admin/maintenance',      icon: Wrench,          label: 'Maintenance' },
     { to: '/admin/maintenance-list', icon: ListChecks,      label: 'Maintenance Summary' },
     { to: '/admin/payments',              icon: CreditCard,     label: 'Payment Management' },
-    { to: '/admin/payment-verification',  icon: ClipboardCheck, label: 'Payment Approvals' },
+    { to: '/admin/payment-verification',  icon: ClipboardCheck, label: 'Payment Approvals', badge: pendingVerifications },
     { to: '/admin/expenses',         icon: Receipt,         label: 'Expenses' },
     { to: '/admin/pending-dues',     icon: Clock,           label: 'Outstanding Dues' },
     { to: '/admin/receipts',         icon: FileText,        label: 'Receipts' },

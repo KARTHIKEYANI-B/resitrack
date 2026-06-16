@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Wrench, CreditCard, Clock,
   FileText, Bell, Settings, LogOut, Home,
-  BookOpen, X, Users, ShieldCheck
+  BookOpen, X, Users, ShieldCheck, Shield
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -15,8 +15,9 @@ const P = {
 }
 
 const COMMON_NAV = [
-  { to: '/user',               icon: LayoutDashboard, label: 'Dashboard',    end: true },
+  { to: '/user',               icon: LayoutDashboard, label: 'Dashboard',        end: true },
   { to: '/user/members',       icon: ShieldCheck,     label: 'Community Members' },
+  { to: '/user/security-message', icon: Shield,       label: 'Message Security'  },
   { to: '/user/notifications', icon: Bell,            label: 'Notifications' },
   { to: '/user/settings',      icon: Settings,        label: 'Settings' },
 ]
