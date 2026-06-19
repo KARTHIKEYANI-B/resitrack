@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Edit2, Trash2, Search, RefreshCw, Users, AlertTriangle,
   ChevronDown, ChevronUp, Wifi, WifiOff, UserCheck,
-  BarChart2, Home, Building2, Shield, Activity, UserCircle2
+  BarChart2, Home, Building2, Shield, Activity, UserCircle2,
+  User, Heart, Baby
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
@@ -17,10 +18,11 @@ const P = {
   dark: '#1a2e2e', body: '#2d4040', muted: '#6b8080',
 }
 
+// Relationship → icon component (replaces emoji avatars with professional icon set)
 const REL_ICONS = {
-  FATHER:'👨', MOTHER:'👩', WIFE:'💑', HUSBAND:'👨',
-  SON:'👦', DAUGHTER:'👧', BROTHER:'🧒', SISTER:'🧒',
-  GRANDFATHER:'👴', GRANDMOTHER:'👵', OTHER:'👤',
+  FATHER: User, MOTHER: User, WIFE: Heart, HUSBAND: User,
+  SON: Baby, DAUGHTER: Baby, BROTHER: User, SISTER: User,
+  GRANDFATHER: User, GRANDMOTHER: User, OTHER: User,
 }
 
 const INIT_EDIT = {
@@ -120,6 +122,7 @@ function PopulationSummary() {
     { label: 'Family Members',       value: pop?.totalFamilyMembers ?? 0, icon: Users,      color: '#E65100' },
     { label: '— With App Access',    value: pop?.familyMembersWithAccess ?? 0, icon: Wifi,  color: '#1565C0', indent: true },
     { label: 'Admins',               value: pop?.totalAdmins ?? 0,        icon: Shield,     color: '#880E4F' },
+    { label: '— Super Admins',       value: pop?.totalSuperAdmins ?? 0,   icon: Shield,     color: '#4A0072', indent: true },
     { label: 'Active Portal Users',   value: pop?.totalActiveUsers ?? 0,   icon: Activity,   color: '#2E7D32' },
   ]
 
@@ -253,7 +256,9 @@ function PopulationSummary() {
                 <div key={m.id}
                   className="flex items-start gap-3 p-3 rounded-xl"
                   style={{ background: '#f8fafa', border: `1px solid ${P.border}` }}>
-                  <span className="text-xl flex-shrink-0">{REL_ICONS[m.relationship] || '👤'}</span>
+                  {(() => { const RelIcon = REL_ICONS[m.relationship] || User; return (
+                    <span className="flex-shrink-0" style={{ color: P.secondary }}><RelIcon size={20} /></span>
+                  ) })()}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold truncate" style={{ color: P.dark }}>{m.name}</p>
                     <p className="text-[10px]" style={{ color: P.secondary }}>
@@ -309,7 +314,9 @@ function FamilyMembersPanel({ residentId }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {members.map(m => (
           <div key={m.id} className="bg-white rounded-xl p-3 flex items-start gap-3" style={{ border: `1px solid ${P.border}` }}>
-            <span className="text-xl flex-shrink-0">{REL_ICONS[m.relationship] || '👤'}</span>
+            {(() => { const RelIcon = REL_ICONS[m.relationship] || User; return (
+              <span className="flex-shrink-0" style={{ color: P.secondary }}><RelIcon size={20} /></span>
+            ) })()}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold truncate" style={{ color: P.dark }}>{m.name}</p>
               <p className="text-[10px]" style={{ color: P.secondary }}>{m.relationshipDisplayName}{m.age ? ` · Age ${m.age}` : ''}</p>

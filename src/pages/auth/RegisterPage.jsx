@@ -275,7 +275,7 @@ export default function RegisterPage() {
                           background: form.propertyType === t ? P.primary : '#fff',
                           color: form.propertyType === t ? '#fff' : P.dark,
                         }}>
-                        {t === 'FLAT' ? '🏢 Flat' : '🏡 Villa'}
+                        {t === 'FLAT' ? 'Flat' : 'Villa'}
                       </button>
                     ))}
                   </div>

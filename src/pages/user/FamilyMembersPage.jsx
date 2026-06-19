@@ -28,10 +28,11 @@ const REL_LABELS = {
   GRANDFATHER:'Grandfather', GRANDMOTHER:'Grandmother', OTHER:'Other',
 }
 
+// Relationship → icon component (replaces emoji avatars with professional icon set)
 const REL_ICONS = {
-  FATHER:'👤', MOTHER:'👩', WIFE:'💑', HUSBAND:'👤‍❤️‍👤',
-  SON:'👦', DAUGHTER:'👧', BROTHER:'🧒', SISTER:'🧒',
-  GRANDFATHER:'👴', GRANDMOTHER:'👵', OTHER:'👤',
+  FATHER: User, MOTHER: User, WIFE: Heart, HUSBAND: User,
+  SON: Baby, DAUGHTER: Baby, BROTHER: User, SISTER: User,
+  GRANDFATHER: User, GRANDMOTHER: User, OTHER: User,
 }
 
 // ── Access Status Badge ───────────────────────────────────────────────────
@@ -263,7 +264,9 @@ function GrantAccessModal({ member, onClose, onSave }) {
             <p className="text-xs mt-1" style={{ color: '#388E3C' }}>
               {member.phone
                 ? <><strong>{member.name}</strong> will log in using mobile number <strong>{member.phone}</strong></>
-                : <span className="text-red-600 font-semibold">⚠ No mobile number on file — please add their phone number first.</span>
+                : <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
+                    <AlertTriangle size={12} /> No mobile number on file — please add their phone number first.
+                  </span>
               }
             </p>
           </div>
@@ -332,9 +335,9 @@ function MemberCard({ member, onEdit, onRemove, onGrantAccess, onRevokeAccess })
       style={{ border: `1px solid ${P.border}` }}>
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ background: P.accent }}>
-          {REL_ICONS[member.relationship] || '👤'}
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: P.accent, color: P.body }}>
+          {(() => { const RelIcon = REL_ICONS[member.relationship] || User; return <RelIcon size={22} /> })()}
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm truncate" style={{ color: P.dark }}>{member.name}</p>
