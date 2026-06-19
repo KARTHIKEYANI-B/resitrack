@@ -11,7 +11,6 @@ import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
-// ── Helpers ───────────────────────────────────────────────────────────────
 
 const fmt = (n) => {
   const v = Number(n ?? 0)
@@ -40,8 +39,6 @@ function nowYM() {
   const d = new Date()
   return { year: d.getFullYear(), month: d.getMonth() + 1 }
 }
-
-// ── Sub-components ────────────────────────────────────────────────────────
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -221,7 +218,6 @@ export default function Dashboard() {
     }
   }, [selYear, selMonth])
 
-  // Reload chart whenever chartYear changes
   const loadChart = useCallback(async () => {
     try {
       const cRes = await adminAPI.getMonthlyChartData(chartYear)
@@ -235,7 +231,6 @@ export default function Dashboard() {
 
   const handleRefresh = () => { setRefresh(true); loadStats(true) }
 
-  // ── Derived values ────────────────────────────────────────────────────
   const s = stats ?? {}
 
   const income       = s.totalMonthlyIncome    ?? 0
@@ -262,8 +257,7 @@ export default function Dashboard() {
 
   // Full / Full-Unpaid payment counts — two-state model (PAID / UNPAID only)
   const fullPaymentCount  = s.fullPaymentCount  ?? 0
-  // fullUnpaidCount = residents where paidSoFar == 0 (no payment made at all this month).
-  // Fallback: totalActiveOwners − fullPaymentCount (owners with any pending amount are UNPAID).
+
   const fullUnpaidCount = s.fullUnpaidCount != null
     ? s.fullUnpaidCount
     : Math.max(0, totalActiveOwners - fullPaymentCount)

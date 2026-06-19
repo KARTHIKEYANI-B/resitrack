@@ -8,7 +8,7 @@ export const familyMemberAPI = {
   update:    (id, data) => axiosInstance.put(`/user/family-members/${id}`, data),
   remove:    (id)       => axiosInstance.delete(`/user/family-members/${id}`),
 
-  // App access management
+ 
   grantAccess:  (id, data) => axiosInstance.post(`/user/family-members/${id}/grant-access`, data),
   revokeAccess: (id)       => axiosInstance.post(`/user/family-members/${id}/revoke-access`),
 }

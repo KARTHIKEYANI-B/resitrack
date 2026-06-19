@@ -7,7 +7,6 @@ const T = 'background-color 0.14s cubic-bezier(0.25,0.46,0.45,0.94), color 0.14s
 export default function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null
 
-  // Clamp page range around current
   const range = (() => {
     const half = 2
     let start = Math.max(1, page - half)

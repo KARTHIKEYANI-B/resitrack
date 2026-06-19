@@ -33,10 +33,6 @@ export const adminAPI = {
   updateMaintenance:   (id, data) => axiosInstance.put(`/admin/maintenance/${id}`, data),
   deleteMaintenance:   (id)       => axiosInstance.delete(`/admin/maintenance/${id}`),
 
-  // ── Maintenance List: per-owner calculated amounts ────────────────────
-  // FIX: This method was missing — caused "Could not load maintenance list" error.
-  // Calls GET /admin/maintenance/owner-list?year=YYYY&month=MM
-  // Returns { flatOwners, villaOwners, ratePerSqFt, grandTotal, ... }
   getMaintenanceOwnerList: (year, month) =>
     axiosInstance.get('/admin/maintenance/owner-list', { params: { year, month } }),
 
@@ -52,8 +48,6 @@ export const adminAPI = {
   approvePayment:          (id)         => axiosInstance.put(`/admin/payments/${id}/approve`),
   rejectPayment:           (id, reason) => axiosInstance.put(`/admin/payments/${id}/reject`, { reason }),
 
-  // ── Payment Verification (screenshot-based workflow) ──────────────────
-  // FIX (from previous task): These were missing — kept here for completeness.
   getPaymentVerificationRequests: (params) =>
     axiosInstance.get('/admin/payment-verification', { params }),
   verifyPaymentRequest:        (id)         => axiosInstance.put(`/admin/payment-verification/${id}/verify`),
@@ -72,7 +66,6 @@ export const adminAPI = {
   updateExpense:  (id, data) => axiosInstance.put(`/admin/expenses/${id}`, data),
   deleteExpense:  (id)       => axiosInstance.delete(`/admin/expenses/${id}`),
 
-  // ── Pending Dues ──────────────────────────────────────────────────────
   getPendingDues:        ()   => axiosInstance.get('/admin/pending-dues'),
   getPendingDuesSummary: ()   => axiosInstance.get('/admin/pending-dues/summary'),
   applyPenalty:          (id) => axiosInstance.post(`/admin/pending-dues/${id}/penalty`),

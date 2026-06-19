@@ -24,7 +24,6 @@ function currentYM() {
 const STATUS_STYLE = {
   PAID:    'bg-green-100 text-green-700 border-green-200',
   UNPAID:  'bg-red-100 text-red-600 border-red-200',
-  // Legacy aliases — kept for backward compat with any cached data
   PENDING: 'bg-sky-100 text-sky-600 border-sky-200',
   OVERDUE: 'bg-orange-100 text-orange-600 border-orange-200',
 }
@@ -37,15 +36,11 @@ const STATUS_ICON = {
 }
 
 function resolveStatus(owner) {
-  // Primary: trust the backend status string — it's set after the tolerance snap
   const backendStatus = (owner.paymentStatus ?? '').toUpperCase()
   if (backendStatus === 'PAID') return 'PAID'
 
-  // Secondary: pendingAmount == 0 overrides any UNPAID status string
   const pending = owner.pendingAmount ?? null
   if (pending !== null && Number(pending) <= 0) return 'PAID'
-
-  // Otherwise UNPAID (covers PENDING legacy values too)
   return 'UNPAID'
 }
 
@@ -212,9 +207,6 @@ export default function MaintenanceList() {
   const totalVilla  = data?.totalVillaMaintenance ?? 0
   const grandTotal  = data?.grandTotal            ?? 0
 
-  // Recompute paid counts from pendingAmount (source of truth) rather than
-  // trusting the backend summary counts, which can lag behind if the status
-  // string is out of sync with the actual pending amount.
   const paidFlat    = flatOwners.filter(o  => resolveStatus(o) === 'PAID').length
   const paidVilla   = villaOwners.filter(o => resolveStatus(o) === 'PAID').length
 

@@ -5,11 +5,6 @@ const AuthContext = createContext(null)
 const TOKEN_KEY = 'resitrack_token'
 const USER_KEY  = 'resitrack_user'
 
-/**
- * Read from localStorage first (persisted "remember me" session),
- * then fall back to sessionStorage (current-tab session only).
- * This ensures both storage strategies work correctly.
- */
 function readStored(key) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key)
 }
@@ -33,12 +28,7 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  /**
-   * login(tokenValue, userData, rememberMe)
-   *
-   * rememberMe = true  → localStorage  (survives browser close/restart)
-   * rememberMe = false → sessionStorage (cleared when tab/window closes)
-   */
+
   const login = useCallback((tokenValue, userData, rememberMe = false) => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)

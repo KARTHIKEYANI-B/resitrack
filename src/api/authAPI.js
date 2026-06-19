@@ -1,10 +1,9 @@
 import axiosInstance from './axios'
 
 export const authAPI = {
-  // ── NEW: single login call used by the unified login page ────────────────
+
   login:                   (data)  => axiosInstance.post('/auth/login', data),
 
-  // ── Existing individual endpoints (kept for backward compat) ─────────────
   adminLogin:              (data)  => axiosInstance.post('/auth/admin/login', data),
   userLogin:               (data)  => axiosInstance.post('/auth/user/login',  data),
   securityLogin:           (data)  => axiosInstance.post('/auth/security/login', data),
