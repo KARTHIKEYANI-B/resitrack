@@ -180,7 +180,7 @@ function PaymentMatrix({ data }) {
               <th
                 className={`${stickyBase} report-th top-0 left-0 border-r border-[#bfdbf7]`}
                 style={{ background: '#FFE0C5' }}>
-                #
+                S.NO
               </th>
               <th
                 className={`${stickyBase} report-th top-0 text-left border-r border-[#bfdbf7]`}
@@ -213,7 +213,7 @@ function PaymentMatrix({ data }) {
               <td
                 className={`${stickyBase} report-td left-0 border-r border-t-2 border-[#022b3a]/20 font-bold text-[#022b3a]/60`}
                 style={{ background: '#e1e5f2' }}>
-                #
+                
               </td>
               <td
                 className={`${stickyBase} report-td border-r border-t-2 border-[#022b3a]/20 font-bold text-[#022b3a] uppercase tracking-wide`}
