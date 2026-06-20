@@ -4,7 +4,7 @@ import {
   LayoutDashboard, UserCheck, Wrench, CreditCard, Receipt,
   Clock, FileText, Bell, Settings, LogOut,
   ChevronLeft, ChevronRight, Building2, BookOpen, Users, X,
-  MessageSquare, ShieldCheck, ClipboardCheck, ListChecks
+  MessageSquare, ShieldCheck, ClipboardCheck, ListChecks, Table2
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { adminAPI } from '../../api/adminAPI'
@@ -65,6 +65,7 @@ export default function AdminSidebar({
     { to: '/admin/maintenance',      icon: Wrench,          label: 'Maintenance' },
     { to: '/admin/maintenance-list', icon: ListChecks,      label: 'Maintenance Summary' },
     { to: '/admin/payments',              icon: CreditCard,     label: 'Payment Management' },
+    { to: '/admin/resident-payment-detail', icon: Table2,       label: 'Resident Paid/Unpaid Detail' },
     { to: '/admin/payment-verification',  icon: ClipboardCheck, label: 'Payment Approvals', badge: pendingVerifications },
     { to: '/admin/expenses',         icon: Receipt,         label: 'Expenses' },
     { to: '/admin/pending-dues',     icon: Clock,           label: 'Outstanding Dues' },

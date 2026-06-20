@@ -22,12 +22,12 @@ const pct = (n) => {
   const v = Number(n ?? 0)
   const color = v >= 0 ? 'text-green-600' : 'text-red-500'
   const Icon  = v >= 0 ? ArrowUpRight : ArrowDownRight
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${color}`}>
-      <Icon size={11} />
-      {Math.abs(v).toFixed(1)}% vs last month
-    </span>
-  )
+  // return (
+  //   <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${color}`}>
+  //     <Icon size={11} />
+  //     {Math.abs(v).toFixed(1)}% vs last month
+  //   </span>
+  // )
 }
 
 const MONTH_NAMES = [

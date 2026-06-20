@@ -282,7 +282,7 @@ function CollectionReport({ data, year, onExport, exporting }) {
           <table className="w-full text-xs whitespace-nowrap">
             <thead>
               <tr className="border-b border-[#bfdbf7] bg-white">
-                <th className="report-th sticky left-0 bg-white z-10 min-w-[60px]">#</th>
+                <th className="report-th sticky left-0 bg-white z-10 min-w-[60px]">S.NO</th>
                 <th className="report-th sticky left-[60px] bg-white z-10 min-w-[180px] text-left">Owner Name</th>
                 <th className="report-th min-w-[70px]">Type</th>
                 <th className="report-th min-w-[75px]">Sq.Ft</th>

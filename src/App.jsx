@@ -21,6 +21,7 @@ import ExpenseManagement     from './pages/admin/ExpenseManagement'
 import PendingDues           from './pages/admin/PendingDues'
 import Receipts              from './pages/admin/Receipts'
 import AdminFinancialReport  from './pages/admin/AdminFinancialReport'
+import ResidentPaymentDetail from './pages/admin/ResidentPaymentDetail'
 import AdminNotifications    from './pages/admin/Notifications'
 import AdminComplaints       from './pages/admin/AdminComplaints'
 import AdminSettings         from './pages/admin/Settings'
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="maintenance"          element={<MaintenanceManagement />} />
             <Route path="maintenance-list"     element={<MaintenanceList />} />
             <Route path="payments"             element={<PaymentTracking />} />
+            <Route path="resident-payment-detail" element={<ResidentPaymentDetail />} />
             <Route path="payment-verification" element={<PaymentVerification />} />
             <Route path="expenses"             element={<ExpenseManagement />} />
             <Route path="pending-dues"         element={<PendingDues />} />
