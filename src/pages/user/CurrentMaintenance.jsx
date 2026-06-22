@@ -278,7 +278,7 @@ export default function CurrentMaintenance() {
       </div>
 
       {/* Instructions card */}
-      {isPending && m && (
+      {/* {isPending && m && (
         <div className="card border border-[#bfdbf7]">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#e1e5f2] flex items-center justify-center flex-shrink-0">
@@ -295,7 +295,7 @@ export default function CurrentMaintenance() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {isPending && m?.lateFeeApplied && (
         <div className="flex items-start gap-3 p-4 bg-white border border-[#bfdbf7] rounded-xl">
@@ -512,10 +512,10 @@ function BankTransferForm({ form, set, Err, errors, total, screenshot, screensho
         <button onClick={onBack} className="text-xs text-[#1f7a8c] hover:text-[#022b3a] transition-colors">← Back</button>
         <span className="text-sm font-semibold text-[#022b3a]">Bank Transfer Details</span>
       </div>
-      <div className="flex items-start gap-2 p-3 bg-purple-950/20 border border-purple-900/30 rounded-xl text-xs text-purple-300">
+      {/* <div className="flex items-start gap-2 p-3 bg-purple-950/20 border border-purple-900/30 rounded-xl text-xs text-purple-300">
         <Building2 size={12} className="mt-0.5 flex-shrink-0" />
         Complete the bank transfer, then fill in the reference ID and optionally upload a screenshot.
-      </div>
+      </div> */}
       <SharedNamePhone form={form} set={set} Err={Err} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>

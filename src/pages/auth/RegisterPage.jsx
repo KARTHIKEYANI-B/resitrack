@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   Eye, EyeOff, Building2, User, Mail, Phone,
   Home, Ruler, Users, Car, MapPin, Lock,
-  CheckCircle, ArrowLeft, AlertCircle, ChevronDown
+  CheckCircle, ArrowLeft, AlertCircle, ChevronDown,
+  Upload, FileText, X
 } from 'lucide-react'
 import { authAPI } from '../../api/authAPI'
 import toast from 'react-hot-toast'
@@ -90,9 +91,37 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [step,    setStep]    = useState(0)
   const [errors,  setErrors]  = useState({})
+  const [insuranceDoc, setInsuranceDoc] = useState(null)
+  const [insuranceDocError, setInsuranceDocError] = useState('')
   const navigate = useNavigate()
 
-  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); if (errors[k]) setErrors(e => ({ ...e, [k]: '' })) }
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }))
+    if (errors[k]) setErrors(e => ({ ...e, [k]: '' }))
+    // If Vehicle Number is cleared, also clear any selected insurance document
+    if (k === 'vehicleDetails' && !v.trim()) {
+      setInsuranceDoc(null)
+      setInsuranceDocError('')
+    }
+  }
+
+  const handleInsuranceDocChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) { setInsuranceDoc(null); return }
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+    if (!allowedTypes.includes(file.type)) {
+      setInsuranceDocError('Invalid file type. Use JPG, PNG, or PDF.')
+      setInsuranceDoc(null)
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setInsuranceDocError('File too large. Maximum 10 MB.')
+      setInsuranceDoc(null)
+      return
+    }
+    setInsuranceDocError('')
+    setInsuranceDoc(file)
+  }
 
   const validateStep0 = () => {
     const e = {}
@@ -131,7 +160,7 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await authAPI.register({
+      const payload = {
         fullName:       form.fullName.trim(),
         email:          form.email.trim().toLowerCase(),
         phone:          form.phone.trim(),
@@ -144,7 +173,13 @@ export default function RegisterPage() {
         familyMembers:  form.familyMembers ? Number(form.familyMembers) : null,
         vehicleDetails: form.vehicleDetails.trim() || null,
         address:        form.address.trim(),
-      })
+      }
+
+      if (insuranceDoc) {
+        await authAPI.registerWithVehicleDocument(payload, insuranceDoc)
+      } else {
+        await authAPI.register(payload)
+      }
       setStep(2)
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Please try again.'
@@ -321,6 +356,49 @@ export default function RegisterPage() {
                     onChange={e => set('vehicleDetails', e.target.value.toUpperCase())}
                     placeholder="MH01 AB 1234 (optional)" className="input-field pl-9 uppercase" />
                 </Field>
+
+                {/* Insurance Document Upload — only shown once a Vehicle Number is entered */}
+                {form.vehicleDetails.trim() && (
+                  <div>
+                    <label className="label">Insurance Document (optional)</label>
+                    {!insuranceDoc ? (
+                      <label
+                        htmlFor="insuranceDocInput"
+                        className="flex items-center gap-2 rounded-xl px-3 py-3 cursor-pointer transition-colors"
+                        style={{ border: `1.5px dashed ${P.border}`, color: P.muted, background: '#fff' }}>
+                        <Upload size={15} style={{ color: P.secondary }} />
+                        <span className="text-sm">Upload image or PDF of your insurance document</span>
+                        <input
+                          id="insuranceDocInput"
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          onChange={handleInsuranceDocChange}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-xl px-3 py-3"
+                        style={{ border: `1.5px solid ${P.primary}`, background: 'rgba(0,121,121,0.06)' }}>
+                        <FileText size={15} style={{ color: P.primary }} />
+                        <span className="text-sm truncate flex-1" style={{ color: P.dark }}>
+                          {insuranceDoc.name}
+                        </span>
+                        <button type="button" onClick={() => setInsuranceDoc(null)}
+                          style={{ color: P.muted }}>
+                          <X size={15} />
+                        </button>
+                      </div>
+                    )}
+                    {insuranceDocError && (
+                      <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                        <AlertCircle size={10} />{insuranceDocError}
+                      </p>
+                    )}
+                    <p className="text-[11px] mt-1" style={{ color: P.muted }}>
+                      Accepted formats: JPG, JPEG, PNG, PDF (max 10 MB)
+                    </p>
+                  </div>
+                )}
 
                 <Field label="Address *" icon={MapPin} error={errors.address}>
                   <textarea value={form.address} onChange={e => set('address', e.target.value)}

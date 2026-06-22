@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   Lock, Bell, User, Save, Eye, EyeOff, Camera, Trash2,
-  Shield, FileText, AlertCircle, Calendar, ToggleLeft, ToggleRight
+  Shield, FileText, AlertCircle, Calendar, ToggleLeft, ToggleRight,
+  Plus, Car, Upload, Download, X, Edit2, FileImage
 } from 'lucide-react'
 import { userAPI } from '../../api/userAPI'
+import { vehicleAPI } from '../../api/vehicleAPI'
 import { useAuth } from '../../context/AuthContext'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import ProfileAvatar from '../../components/ProfileAvatar'
+import EmptyState from '../../components/common/EmptyState'
+import { formatDate } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
 
 const P = {
@@ -17,7 +21,7 @@ const P = {
 
 const TABS = [
   { key: 'profile',   label: 'Profile',          icon: User },
-  { key: 'insurance', label: 'Vehicle Insurance Reminder', icon: Shield },
+  { key: 'insurance', label: 'Vehicle / Insurance', icon: Shield },
   { key: 'taxes',     label: 'Tax Payment Reminder',   icon: FileText },
   { key: 'password',  label: 'Change Password',   icon: Lock },
   { key: 'notify',    label: 'Notification Preferences',     icon: Bell },
@@ -125,6 +129,280 @@ function Toggle({ enabled, onToggle }) {
   )
 }
 
+// ── Add / Edit Vehicle Modal ───────────────────────────────────────────────
+function VehicleFormModal({ vehicle, onClose, onSaved }) {
+  const isEdit = !!vehicle?.id
+  const [form, setForm] = useState({
+    vehicleNumber:       vehicle?.vehicleNumber       || '',
+    vehicleType:         vehicle?.vehicleType         || '',
+    insuranceProvider:   vehicle?.insuranceProvider   || '',
+    insuranceNumber:     vehicle?.insuranceNumber      || '',
+    insuranceExpiryDate: vehicle?.insuranceExpiryDate || '',
+  })
+  const [file, setFile]       = useState(null)
+  const [fileError, setFileError] = useState('')
+  const [saving, setSaving]   = useState(false)
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) { setFile(null); return }
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+    if (!allowed.includes(f.type)) {
+      setFileError('Invalid file type. Use JPG, PNG, or PDF.')
+      setFile(null)
+      return
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      setFileError('File too large. Maximum 10 MB.')
+      setFile(null)
+      return
+    }
+    setFileError('')
+    setFile(f)
+  }
+
+  const handleSubmit = async () => {
+    if (!form.vehicleNumber.trim()) { toast.error('Vehicle number is required'); return }
+    setSaving(true)
+    try {
+      const payload = {
+        vehicleNumber:       form.vehicleNumber.trim().toUpperCase(),
+        vehicleType:         form.vehicleType || null,
+        insuranceProvider:   form.insuranceProvider.trim() || null,
+        insuranceNumber:     form.insuranceNumber.trim() || null,
+        insuranceExpiryDate: form.insuranceExpiryDate || null,
+      }
+
+      if (isEdit) {
+        await vehicleAPI.update(vehicle.id, payload)
+        if (file) await vehicleAPI.uploadInsuranceDocument(vehicle.id, file)
+        toast.success('Vehicle updated')
+      } else {
+        if (file) {
+          await vehicleAPI.addWithDocument({ ...payload, insuranceDocument: file })
+        } else {
+          await vehicleAPI.add(payload)
+        }
+        toast.success('Vehicle added')
+      }
+      onSaved()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save vehicle')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputCls = 'w-full px-3 py-2 rounded-xl text-sm border outline-none'
+  const inputStyle = { borderColor: P.border, color: P.dark }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(26,46,46,0.55)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        style={{ border: `1px solid ${P.border}` }}>
+        <div className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: `1px solid ${P.border}`, background: '#FFFAF5' }}>
+          <div className="flex items-center gap-2">
+            <Car size={16} style={{ color: P.primary }} />
+            <h2 className="font-bold text-sm" style={{ color: P.dark }}>
+              {isEdit ? 'Edit Vehicle' : 'Add Vehicle'}
+            </h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <X size={15} style={{ color: P.muted }} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+              Vehicle Number *
+            </label>
+            <input value={form.vehicleNumber}
+              onChange={e => set('vehicleNumber', e.target.value.toUpperCase())}
+              placeholder="e.g. MH01 AB 1234"
+              className={inputCls + ' uppercase'} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+              Vehicle Type
+            </label>
+            <select value={form.vehicleType}
+              onChange={e => set('vehicleType', e.target.value)}
+              className={inputCls} style={inputStyle}>
+              <option value="">Select type (optional)</option>
+              <option value="TWO_WHEELER">Two-Wheeler</option>
+              <option value="FOUR_WHEELER">Four-Wheeler</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                Insurance Provider
+              </label>
+              <input value={form.insuranceProvider}
+                onChange={e => set('insuranceProvider', e.target.value)}
+                placeholder="e.g. New India Assurance"
+                className={inputCls} style={inputStyle} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                Insurance Number
+              </label>
+              <input value={form.insuranceNumber}
+                onChange={e => set('insuranceNumber', e.target.value)}
+                placeholder="e.g. NIA/12345/2024"
+                className={inputCls} style={inputStyle} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+              Insurance Expiry Date
+            </label>
+            <input type="date" value={form.insuranceExpiryDate}
+              onChange={e => set('insuranceExpiryDate', e.target.value)}
+              className={inputCls} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+              Insurance Document {isEdit && vehicle?.insuranceDocumentUrl ? '(replace)' : '(optional)'}
+            </label>
+            {!file ? (
+              <label htmlFor="vehicleDocInput"
+                className="flex items-center gap-2 rounded-xl px-3 py-2.5 cursor-pointer"
+                style={{ border: `1.5px dashed ${P.border}`, color: P.muted }}>
+                <Upload size={14} style={{ color: P.secondary }} />
+                <span className="text-xs">Upload image or PDF</span>
+                <input id="vehicleDocInput" type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                  onChange={handleFileChange} className="hidden" />
+              </label>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+                style={{ border: `1.5px solid ${P.primary}`, background: 'rgba(0,121,121,0.06)' }}>
+                <FileText size={14} style={{ color: P.primary }} />
+                <span className="text-xs truncate flex-1" style={{ color: P.dark }}>{file.name}</span>
+                <button type="button" onClick={() => setFile(null)} style={{ color: P.muted }}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            {fileError && (
+              <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle size={10} />{fileError}
+              </p>
+            )}
+            <p className="text-[10px] mt-1" style={{ color: P.muted }}>JPG, JPEG, PNG, PDF — max 10 MB</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${P.border}` }}>
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+            style={{ border: `1px solid ${P.border}`, color: P.muted }}>
+            Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={saving}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: P.primary, opacity: saving ? 0.7 : 1 }}>
+            {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Vehicle'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const VEHICLE_TYPE_LABELS = {
+  TWO_WHEELER: 'Two-Wheeler',
+  FOUR_WHEELER: 'Four-Wheeler',
+  OTHER: 'Other',
+}
+
+// ── Single Vehicle Card ────────────────────────────────────────────────────
+function VehicleCard({ vehicle, onEdit, onRemove }) {
+  const isExpired = vehicle.insuranceExpiryDate
+    ? new Date(vehicle.insuranceExpiryDate) < new Date()
+    : false
+
+  return (
+    <div className="p-4 rounded-xl space-y-3" style={{ background: P.accent, border: `1px solid ${P.border}` }}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: P.primary }}>
+            <Car size={16} color="#fff" />
+          </div>
+          <div>
+            <p className="font-bold text-sm" style={{ color: P.dark }}>{vehicle.vehicleNumber}</p>
+            <p className="text-[11px]" style={{ color: P.muted }}>
+              {vehicle.vehicleType ? VEHICLE_TYPE_LABELS[vehicle.vehicleType] || vehicle.vehicleType : 'Vehicle'}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-1.5 flex-shrink-0">
+          <button onClick={() => onEdit(vehicle)}
+            className="p-1.5 rounded-lg" style={{ border: `1px solid ${P.border}`, color: P.primary }}>
+            <Edit2 size={12} />
+          </button>
+          <button onClick={() => onRemove(vehicle)}
+            className="p-1.5 rounded-lg" style={{ border: `1px solid ${P.border}`, color: '#c0392b' }}>
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+
+      {(vehicle.insuranceProvider || vehicle.insuranceNumber || vehicle.insuranceExpiryDate) && (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {vehicle.insuranceProvider && (
+            <div>
+              <p className="text-[10px]" style={{ color: P.muted }}>Provider</p>
+              <p className="font-medium" style={{ color: P.body }}>{vehicle.insuranceProvider}</p>
+            </div>
+          )}
+          {vehicle.insuranceNumber && (
+            <div>
+              <p className="text-[10px]" style={{ color: P.muted }}>Policy No.</p>
+              <p className="font-medium" style={{ color: P.body }}>{vehicle.insuranceNumber}</p>
+            </div>
+          )}
+          {vehicle.insuranceExpiryDate && (
+            <div className="col-span-2">
+              <p className="text-[10px]" style={{ color: P.muted }}>Expiry Date</p>
+              <p className="font-medium" style={{ color: isExpired ? '#c0392b' : P.body }}>
+                {formatDate(vehicle.insuranceExpiryDate)}
+                {isExpired && ' (Expired)'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${P.border}` }}>
+        {vehicle.insuranceDocumentUrl ? (
+          <a href={vehicle.insuranceDocumentUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: P.primary }}>
+            <FileImage size={13} />
+            View / Download Document
+          </a>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs" style={{ color: P.muted }}>
+            <FileText size={13} />
+            No insurance document uploaded
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────
 export default function UserSettings() {
   const { user } = useAuth()
@@ -160,6 +438,30 @@ export default function UserSettings() {
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
   const [showPw, setShowPw]       = useState({ current: false, new: false, confirm: false })
   const [notify, setNotify]       = useState({ email: true, sms: true, dues: true, announcements: true })
+
+  // Multiple Vehicles
+  const [vehicles, setVehicles]             = useState([])
+  const [vehiclesLoading, setVehiclesLoading] = useState(true)
+  const [vehicleModal, setVehicleModal]     = useState(null) // null = closed, {} = add, {...vehicle} = edit
+
+  const loadVehicles = () => {
+    setVehiclesLoading(true)
+    vehicleAPI.getAll()
+      .then(res => setVehicles(res.data?.data || []))
+      .catch(() => setVehicles([]))
+      .finally(() => setVehiclesLoading(false))
+  }
+
+  const handleRemoveVehicle = async (vehicle) => {
+    if (!window.confirm(`Remove vehicle ${vehicle.vehicleNumber}? This will also remove its insurance document.`)) return
+    try {
+      await vehicleAPI.remove(vehicle.id)
+      toast.success('Vehicle removed')
+      loadVehicles()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not remove vehicle')
+    }
+  }
 
   useEffect(() => {
     userAPI.getProfile()
@@ -199,6 +501,10 @@ export default function UserSettings() {
       })
       .finally(() => setLoading(false))
   }, [user])
+
+  useEffect(() => {
+    loadVehicles()
+  }, [])
 
   const saveProfile = async () => {
     setSaving(true)
@@ -348,69 +654,117 @@ export default function UserSettings() {
         </div>
       )}
 
-      {/* ── Vehicle Insurance Tab ────────────────────────────────────────── */}
+      {/* ── Vehicle / Insurance Tab ──────────────────────────────────────── */}
       {tab === 'insurance' && (
-        <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: `1px solid ${P.border}` }}>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield size={16} style={{ color: P.primary }} />
-            <h2 className="text-sm font-bold" style={{ color: P.dark }}>Vehicle Insurance</h2>
-          </div>
-          {/* <p className="text-xs" style={{ color: P.muted }}>
-            Store your vehicle insurance details. You will receive a reminder notification exactly
-            <strong> 2 days before</strong> the expiry date.
-          </p> */}
+        <div className="space-y-4">
 
-          {/* <div className="flex items-start gap-2 p-3 rounded-xl text-xs"
-            style={{ background: '#FFF9E6', border: '1px solid #F5C518', color: '#856404' }}>
-            <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-            All fields are optional. A reminder is sent only when Expiry Date is set.
-          </div> */}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
-                Insurance Provider (optional)
-              </label>
-              <input value={insurance.insuranceProvider}
-                onChange={e => setInsurance(i => ({ ...i, insuranceProvider: e.target.value }))}
-                placeholder="e.g. New India Assurance"
-                className={inputCls} style={inputStyle} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
-                Policy / Insurance Number (optional)
-              </label>
-              <input value={insurance.insuranceNumber}
-                onChange={e => setInsurance(i => ({ ...i, insuranceNumber: e.target.value }))}
-                placeholder="e.g. NIA/12345/2024"
-                className={inputCls} style={inputStyle} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
-                Insurance Expiry Date <span style={{ color: '#c0392b' }}>*</span>
-              </label>
-              <div className="relative">
-                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.muted }} />
-                <input type="date" value={insurance.insuranceExpiryDate}
-                  onChange={e => setInsurance(i => ({ ...i, insuranceExpiryDate: e.target.value }))}
-                  className={inputCls + ' pl-8'} style={inputStyle} />
+          {/* ── My Vehicles (multiple vehicles + insurance documents) ──────── */}
+          <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: `1px solid ${P.border}` }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Car size={16} style={{ color: P.primary }} />
+                <h2 className="text-sm font-bold" style={{ color: P.dark }}>My Vehicles</h2>
               </div>
-              {insurance.insuranceExpiryDate && (
-                <p className="text-[10px] mt-1" style={{ color: P.primary }}>
-                  Reminder will be sent on {new Date(new Date(insurance.insuranceExpiryDate).getTime() - 2*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
-              )}
+              <button onClick={() => setVehicleModal({})}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+                style={{ background: P.primary }}>
+                <Plus size={13} />
+                Add Another Vehicle
+              </button>
             </div>
+            <p className="text-xs" style={{ color: P.muted }}>
+              Add any number of vehicles — two-wheelers, four-wheelers, or others — and optionally
+              upload an insurance document (image or PDF) for each one.
+            </p>
+
+            {vehiclesLoading ? (
+              <div className="py-8 text-center text-xs" style={{ color: P.muted }}>Loading vehicles…</div>
+            ) : vehicles.length === 0 ? (
+              <EmptyState
+                icon={Car}
+                title="No vehicles added yet"
+                description="Click 'Add Another Vehicle' to register your first vehicle."
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {vehicles.map(v => (
+                  <VehicleCard
+                    key={v.id}
+                    vehicle={v}
+                    onEdit={(veh) => setVehicleModal(veh)}
+                    onRemove={handleRemoveVehicle}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          <button onClick={saveInsurance} disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity"
-            style={{ background: P.primary, opacity: saving ? 0.7 : 1 }}>
-            <Save size={14} />
-            {saving ? 'Saving…' : 'Save Insurance Details'}
-          </button>
+          {/* ── Legacy single-vehicle insurance reminder (unchanged) ───────── */}
+          <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: `1px solid ${P.border}` }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Shield size={16} style={{ color: P.primary }} />
+              <h2 className="text-sm font-bold" style={{ color: P.dark }}>Vehicle Insurance Reminder</h2>
+            </div>
+            <p className="text-xs" style={{ color: P.muted }}>
+              These details power your expiry reminder notification and are kept separately from the
+              vehicle list above for backward compatibility.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                  Insurance Provider (optional)
+                </label>
+                <input value={insurance.insuranceProvider}
+                  onChange={e => setInsurance(i => ({ ...i, insuranceProvider: e.target.value }))}
+                  placeholder="e.g. New India Assurance"
+                  className={inputCls} style={inputStyle} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                  Policy / Insurance Number (optional)
+                </label>
+                <input value={insurance.insuranceNumber}
+                  onChange={e => setInsurance(i => ({ ...i, insuranceNumber: e.target.value }))}
+                  placeholder="e.g. NIA/12345/2024"
+                  className={inputCls} style={inputStyle} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold mb-1" style={{ color: P.body }}>
+                  Insurance Expiry Date <span style={{ color: '#c0392b' }}>*</span>
+                </label>
+                <div className="relative">
+                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.muted }} />
+                  <input type="date" value={insurance.insuranceExpiryDate}
+                    onChange={e => setInsurance(i => ({ ...i, insuranceExpiryDate: e.target.value }))}
+                    className={inputCls + ' pl-8'} style={inputStyle} />
+                </div>
+                {insurance.insuranceExpiryDate && (
+                  <p className="text-[10px] mt-1" style={{ color: P.primary }}>
+                    Reminder will be sent on {new Date(new Date(insurance.insuranceExpiryDate).getTime() - 2*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button onClick={saveInsurance} disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity"
+              style={{ background: P.primary, opacity: saving ? 0.7 : 1 }}>
+              <Save size={14} />
+              {saving ? 'Saving…' : 'Save Insurance Details'}
+            </button>
+          </div>
         </div>
       )}
+
+      {vehicleModal !== null && (
+        <VehicleFormModal
+          vehicle={vehicleModal.id ? vehicleModal : null}
+          onClose={() => setVehicleModal(null)}
+          onSaved={() => { setVehicleModal(null); loadVehicles() }}
+        />
+      )}
+
 
       {/* ── Taxes Reminder Tab ───────────────────────────────────────────── */}
       {tab === 'taxes' && (

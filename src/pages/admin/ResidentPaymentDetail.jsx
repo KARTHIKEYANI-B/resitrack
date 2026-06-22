@@ -248,11 +248,6 @@ function PaymentMatrix({ data }) {
   )
 }
 
-// One resident row. Hover state is tracked in JS (not CSS :hover /
-// group-hover) so the sticky-column background color has a single source
-// of truth — avoiding any CSS-specificity ambiguity between an inline
-// `style` background (needed for the sticky cells to stay fully opaque
-// over the scrolling month columns) and a Tailwind hover utility class.
 function MatrixRow({ row, idx, monthKeys }) {
   const [hovered, setHovered] = useState(false)
 
