@@ -474,11 +474,11 @@ export default function FamilyMembersPage() {
       </div>
 
       {/* Info banner */}
-      <div className="mb-5 p-4 rounded-xl text-xs space-y-1"
+      {/* <div className="mb-5 p-4 rounded-xl text-xs space-y-1"
         style={{ background: P.accent, border: `1px solid ${P.border}`, color: P.body }}>
         <p className="font-semibold" style={{ color: P.dark }}>About App Access</p>
         <p>Adding a family member creates a record linked to your property. You can optionally give them app access so they can log in, view notices, and raise complaints. You can revoke access at any time.</p>
-      </div>
+      </div> */}
 
       {/* Members grid */}
       {loading ? (

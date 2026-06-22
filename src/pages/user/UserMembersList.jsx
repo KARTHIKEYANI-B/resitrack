@@ -180,10 +180,10 @@ export default function UserMembersList() {
       </div>
 
       {/* Info banner */}
-      <div className="mb-5 px-4 py-3 rounded-xl text-xs"
+      {/* <div className="mb-5 px-4 py-3 rounded-xl text-xs"
         style={{ background: P.accent, border: `1px solid ${P.border}`, color: P.body }}>
         These are your elected Association Committee Members. Reach out to them for any queries related to your flat/villa.
-      </div>
+      </div> */}
 
       {/* Search */}
       <div className="relative mb-5">

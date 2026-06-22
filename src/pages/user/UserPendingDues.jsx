@@ -123,7 +123,7 @@ export default function UserPendingDues() {
           )}
 
           {/* Overdue warning banner */}
-          {hasOverdue && (
+          {/* {hasOverdue && (
             <div className="flex items-start gap-3 p-4 bg-red-950/20 border border-red-800/30 rounded-xl">
               <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -133,7 +133,7 @@ export default function UserPendingDues() {
                 </p>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Dues Table / Cards */}
           <div className="card p-0 overflow-hidden">

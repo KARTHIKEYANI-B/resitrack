@@ -164,7 +164,7 @@ export default function UserFinancialReport() {
 
       {/* Disclaimer */}
       <p className="text-center text-[11px] text-[#1f7a8c]">
-        Figures shown are for the selected month only. Detailed transaction reports are managed by the admin.
+        Figures shown are for the selected month only.
       </p>
     </div>
   )

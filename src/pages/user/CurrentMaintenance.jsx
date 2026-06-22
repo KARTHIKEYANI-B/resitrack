@@ -68,7 +68,7 @@ export default function CurrentMaintenance() {
     const load = async () => {
       try {
         const res = await userAPI.getCurrentMaintenance()
-        setMaintenance(res.data)
+        setMaintenance(res.data?.data ?? res.data)
         try {
           const profile = await userAPI.getProfile()
           const p = profile.data?.data || profile.data || {}
@@ -179,7 +179,7 @@ export default function CurrentMaintenance() {
       setScreenshotName('')
       setErrors({})
       const res = await userAPI.getCurrentMaintenance()
-      setMaintenance(res.data)
+      setMaintenance(res.data?.data ?? res.data)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Submission failed. Please try again.')
     } finally { setSubmitting(false) }

@@ -208,7 +208,7 @@ export default function UserDashboard() {
               <p className="text-2xl font-bold font-mono text-[#022b3a] mt-1">
                 {formatCurrency(totalPaid)}
               </p>
-              <p className="text-xs text-[#1f7a8c] mt-1">Since registration</p>
+              {/* <p className="text-xs text-[#1f7a8c] mt-1">Since registration</p> */}
             </div>
             <div className="stat-icon flex-shrink-0">
               <TrendingUp size={18} className="text-[#022b3a]/60" />

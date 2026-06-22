@@ -672,10 +672,10 @@ export default function UserSettings() {
                 Add Another Vehicle
               </button>
             </div>
-            <p className="text-xs" style={{ color: P.muted }}>
+            {/* <p className="text-xs" style={{ color: P.muted }}>
               Add any number of vehicles — two-wheelers, four-wheelers, or others — and optionally
               upload an insurance document (image or PDF) for each one.
-            </p>
+            </p> */}
 
             {vehiclesLoading ? (
               <div className="py-8 text-center text-xs" style={{ color: P.muted }}>Loading vehicles…</div>
@@ -705,10 +705,10 @@ export default function UserSettings() {
               <Shield size={16} style={{ color: P.primary }} />
               <h2 className="text-sm font-bold" style={{ color: P.dark }}>Vehicle Insurance Reminder</h2>
             </div>
-            <p className="text-xs" style={{ color: P.muted }}>
+            {/* <p className="text-xs" style={{ color: P.muted }}>
               These details power your expiry reminder notification and are kept separately from the
               vehicle list above for backward compatibility.
-            </p>
+            </p> */}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -779,7 +779,7 @@ export default function UserSettings() {
 
           <p className="text-xs" style={{ color: P.muted }}>
             {taxesEnabled
-              ? 'Reminders are enabled. Fill in the details below and you will receive notifications 2 days before each due date.'
+              ? ''
               : 'Enable this feature to set up reminders for your tax payments. All fields are optional.'}
           </p>
 
