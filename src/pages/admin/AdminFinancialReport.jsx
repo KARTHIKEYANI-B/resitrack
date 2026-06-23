@@ -7,6 +7,7 @@ import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
+// Full month names for the dropdowns — January through December
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const FULL_MONTHS = [
   'January','February','March','April','May','June',
@@ -20,6 +21,7 @@ const APARTMENT = 'R R Dhurya Owners Welfare Association'
 const fmt  = (v) => {
   const n = Number(v)
   if (isNaN(n) || n === 0) return '—'
+  // Always full amount — no K, L, M abbreviations
   return '₹\u00A0' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 const fmtN = (v) => {
@@ -190,6 +192,10 @@ function SummaryCards({ coll, exp, summary }) {
   const closing  = coll?.closingBalance   ?? (collected - expenses)
   const pending  = coll?.pendingDues      ?? 0
 
+  // Balance Breakdown — sourced from /admin/financial-report/summary
+  // bankBalance = all-time bank collections − all-time bank expenses
+  // cashBalance = all-time cash collections − all-time cash expenses
+  // totalBalance = bankBalance + cashBalance
   const bankBal  = summary?.bankBalance  ?? 0
   const cashBal  = summary?.cashBalance  ?? 0
   const totalBal = bankBal + cashBal

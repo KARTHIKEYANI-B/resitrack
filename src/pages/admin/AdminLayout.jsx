@@ -1,4 +1,4 @@
-
+// AdminLayout.jsx
 import { Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import AdminSidebar from '../../components/admin/AdminSidebar'

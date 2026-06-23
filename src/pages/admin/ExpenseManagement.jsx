@@ -158,8 +158,7 @@ function CategoryManagerModal({ open, onClose, onCategoriesChanged }) {
             </div>
           )}
         </div>
-
-        {/* <p className="text-[11px] text-[#1f7a8c]">
+           {/* <p className="text-[11px] text-[#1f7a8c]">
           Deleting a category keeps existing expense records unchanged (historical data preserved).
           Renaming updates all existing expense records automatically.
         </p> */}

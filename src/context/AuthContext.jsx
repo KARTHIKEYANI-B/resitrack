@@ -28,7 +28,6 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-
   const login = useCallback((tokenValue, userData, rememberMe = false) => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)

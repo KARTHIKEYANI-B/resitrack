@@ -21,9 +21,20 @@ function currentYM() {
   return { year: d.getFullYear(), month: d.getMonth() + 1 }
 }
 
+/*
+ * STATUS STYLE MAP
+ *
+ * Backend status values (from MaintenanceService.buildOwnerDTOs):
+ *   "PAID"   – pendingAmount == 0  (owner or FM or combination paid in full)
+ *   "UNPAID" – pendingAmount >  0  (any outstanding balance, including partial payments)
+ *
+ * Rule: pendingAmount == 0 ALWAYS shows PAID.
+ *       pendingAmount >  0 ALWAYS shows UNPAID (two-state model, PARTIAL removed).
+ */
 const STATUS_STYLE = {
   PAID:    'bg-green-100 text-green-700 border-green-200',
   UNPAID:  'bg-red-100 text-red-600 border-red-200',
+  // Legacy aliases — kept for backward compat with any cached data
   PENDING: 'bg-sky-100 text-sky-600 border-sky-200',
   OVERDUE: 'bg-orange-100 text-orange-600 border-orange-200',
 }
@@ -35,12 +46,27 @@ const STATUS_ICON = {
   OVERDUE: <AlertCircle size={11} />,
 }
 
+/**
+ * Derive the canonical two-state status from the owner DTO.
+ * pendingAmount is the source of truth:
+ *   pendingAmount == 0 or backend status == 'PAID' → PAID
+ *   pendingAmount >  0                              → UNPAID
+ *
+ * The backend (MaintenanceService.buildOwnerDTOs) snaps any sub-paisa
+ * pending value (< 0.005) to 0.00 and sets paymentStatus = "PAID", so
+ * both signals always agree. We check BOTH here as a belt-and-suspenders
+ * guard against any stale cached data.
+ */
 function resolveStatus(owner) {
+  // Primary: trust the backend status string — it's set after the tolerance snap
   const backendStatus = (owner.paymentStatus ?? '').toUpperCase()
   if (backendStatus === 'PAID') return 'PAID'
 
+  // Secondary: pendingAmount == 0 overrides any UNPAID status string
   const pending = owner.pendingAmount ?? null
   if (pending !== null && Number(pending) <= 0) return 'PAID'
+
+  // Otherwise UNPAID (covers PENDING legacy values too)
   return 'UNPAID'
 }
 
@@ -207,6 +233,9 @@ export default function MaintenanceList() {
   const totalVilla  = data?.totalVillaMaintenance ?? 0
   const grandTotal  = data?.grandTotal            ?? 0
 
+  // Recompute paid counts from pendingAmount (source of truth) rather than
+  // trusting the backend summary counts, which can lag behind if the status
+  // string is out of sync with the actual pending amount.
   const paidFlat    = flatOwners.filter(o  => resolveStatus(o) === 'PAID').length
   const paidVilla   = villaOwners.filter(o => resolveStatus(o) === 'PAID').length
 

@@ -27,6 +27,10 @@ const POSITIONS = [
   { value: 'TREASURER',       label: 'Treasurer' },
 ]
 
+/**
+ * Canonical position email map — must match AdminAssignmentService.POSITION_EMAILS
+ * and MemberService.resolvePositionEmail() exactly.
+ */
 const POSITION_EMAILS = {
   PRESIDENT:       'superadmin@gmail.com',
   VICE_PRESIDENT:  'admin.vicepresident@apartment.com',
@@ -128,6 +132,10 @@ function AppointModal({ residents, onClose, onSave }) {
         generatedPassword: appointResponse.generatedPassword ?? null,
       }
       setResult(enriched)
+      // NOTE: onSave() is intentionally NOT called here.
+      // It is called when the admin clicks "Done" after reading the credentials.
+      // Calling onSave() here would set modal=null (unmount this component)
+      // before React can render the credentials screen, making the password invisible.
     } catch (err) {
       toast.error(err.response?.data?.message || 'Appointment failed')
     } finally {
@@ -135,6 +143,9 @@ function AppointModal({ residents, onClose, onSave }) {
     }
   }
 
+  // ── Credentials screen — shown after appointment succeeds ───────────────
+  // onSave() is called here (on Done) so the parent reloads AFTER the admin
+  // has read the credentials. Calling it earlier would unmount this modal.
   if (result) {
     const copyToClipboard = (text) => {
       navigator.clipboard.writeText(text).then(
@@ -536,6 +547,10 @@ function RevokeModal({ assignment, onClose, onSave }) {
   )
 }
 
+
+// ── Admin Accounts Panel — Reset Password + Delete (Task 1 / Task 3 support) ──
+// Super Admin / President can view all admin accounts, reset passwords,
+// and delete stale/duplicate accounts directly from the UI.
 function AdminAccountsPanel() {
   const [accounts,         setAccounts]         = useState([])
   const [callerIsSuperAdmin, setCallerIsSuperAdmin] = useState(false)
@@ -550,6 +565,10 @@ function AdminAccountsPanel() {
     setLoading(true)
     try {
       const res = await axiosInstance.get('/admin/accounts')
+      // The backend returns one of two shapes depending on which version is deployed:
+      //   Old: { data: [ {...}, ... ] }                       → res.data.data is an array
+      //   New: { data: { accounts: [...], callerIsSuperAdmin: bool } } → res.data.data is an object
+      // Always extract a guaranteed array and never call .map() on a non-array.
       const payload = res.data?.data
       if (Array.isArray(payload)) {
         // Old backend shape — flat array

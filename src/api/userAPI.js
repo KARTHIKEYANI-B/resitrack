@@ -8,6 +8,8 @@ export const userAPI = {
   getPaymentHistory:          (params) => axiosInstance.get('/user/payments/history', { params }),
   getPendingDues:             ()       => axiosInstance.get('/user/pending-dues'),
 
+  // ── Payment Verification — screenshot-based workflow ─────────────────
+  // GPAY: existing (unchanged)
   submitPaymentVerificationRequest: (data) => {
     const formData = new FormData()
     formData.append('name',          data.name)
@@ -20,6 +22,7 @@ export const userAPI = {
     })
   },
 
+  // CASH: new
   submitCashPaymentRequest: (data) =>
     axiosInstance.post('/user/payment-verification/submit-cash', {
       name:          data.name,
@@ -28,6 +31,7 @@ export const userAPI = {
       paidToAdminId: data.paidToAdminId,
     }),
 
+  // BANK_TRANSFER: new
   submitBankTransferRequest: (data) => {
     const formData = new FormData()
     formData.append('name',          data.name)
@@ -41,6 +45,7 @@ export const userAPI = {
     })
   },
 
+  // Get active admins for CASH payment "Paid To" dropdown
   getActiveAdminsForCashPayment: () =>
     axiosInstance.get('/user/payment-verification/active-admins'),
 
@@ -50,11 +55,13 @@ export const userAPI = {
   getReceiptById:             (id)     => axiosInstance.get(`/user/receipts/${id}`),
   downloadReceipt:            (id)     => axiosInstance.get(`/user/receipts/${id}/download`, { responseType: 'blob' }),
 
+  // Notifications
   getNotifications:           ()       => axiosInstance.get('/user/notifications'),
   getUnreadNotificationCount: ()       => axiosInstance.get('/user/notifications/unread-count'),
   markNotificationRead:       (id)     => axiosInstance.put(`/user/notifications/${id}/read`),
   deleteNotification:         (id)     => axiosInstance.delete(`/user/notifications/${id}`),
 
+  // Complaints
   submitComplaint:            (data)   => axiosInstance.post('/user/complaints', data),
   getMyComplaints:            ()       => axiosInstance.get('/user/complaints'),
   sendComplaint:              (data)   => axiosInstance.post('/user/complaints', {
@@ -77,8 +84,10 @@ export const userAPI = {
   getProfile:                 ()       => axiosInstance.get('/user/profile'),
   updateProfile:              (data)   => axiosInstance.put('/user/profile', data),
 
+  /** Update full profile including insurance and taxes reminder fields. */
   updateFullProfile:          (data)   => axiosInstance.put('/user/profile/full', data),
 
+  // ── Profile photo ─────────────────────────────────────────────────────
   uploadProfilePhoto: (file) => {
     const formData = new FormData()
     formData.append('photo', file)
@@ -87,9 +96,13 @@ export const userAPI = {
     })
   },
 
+  /** Remove profile photo (revert to default avatar). */
   removeProfilePhoto: () => axiosInstance.delete('/user/profile/photo'),
 
+  // ── Security Messaging ────────────────────────────────────────────────
+  /** List active security guards (for the message recipient picker). */
   getSecurityGuards:        ()                  => axiosInstance.get('/user/security/guards'),
 
+  /** Owner / Family Member sends a message to a specific security guard. */
   sendMessageToSecurity:    (guardId, data)     => axiosInstance.post(`/user/security/${guardId}/message`, data),
 }
