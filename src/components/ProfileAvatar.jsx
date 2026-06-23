@@ -1,24 +1,14 @@
-/**
- * ProfileAvatar — universal profile photo component.
- *
- * Priority:
- *   1. photoUrl (uploaded photo from backend)
- *   2. Initials-based colored avatar (always works, never broken)
- *
- * Usage:
- *   <ProfileAvatar name="Ramesh Kumar" photoUrl={user.profilePhotoUrl} size={40} />
- */
+
+import { getInitials } from '../utils/initials'
+
 export default function ProfileAvatar({
   name      = '',
   photoUrl  = null,
   size      = 40,
   className = '',
 }) {
-  const initials = name
-    ? name.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase()
-    : '?'
+  const initials = getInitials(name)
 
-  // Derive a consistent color from the name
   const colors = [
     '#007979', '#24B1B1', '#2E7D32', '#1565C0',
     '#6A1B9A', '#E65100', '#880E4F', '#00695C',
@@ -57,20 +47,13 @@ export default function ProfileAvatar({
   )
 }
 
-/**
- * WithFallback variant — renders both img AND initials div,
- * hides initials until img fails. Use when photoUrl might be present
- * but could break at load time.
- */
 export function ProfileAvatarWithFallback({
   name     = '',
   photoUrl = null,
   size     = 40,
   className = '',
 }) {
-  const initials = name
-    ? name.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase()
-    : '?'
+  const initials = getInitials(name)
   const colors = [
     '#007979', '#24B1B1', '#2E7D32', '#1565C0',
     '#6A1B9A', '#E65100', '#880E4F', '#00695C',

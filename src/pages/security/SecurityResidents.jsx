@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Phone, Home, Search, ChevronDown, ChevronUp, User } from 'lucide-react'
 import { securityAPI } from '../../api/securityAPI'
+import { getInitials } from '../../utils/initials'
 
 const P = {
   primary: '#007979', secondary: '#24B1B1',
@@ -9,9 +10,7 @@ const P = {
 }
 
 function Avatar({ name, size = 40 }) {
-  const initials = name
-    ? name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
-    : '??'
+  const initials = getInitials(name, '??')
   return (
     <div className="rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
       style={{ width: size, height: size, background: P.primary, fontSize: size * 0.3 }}>

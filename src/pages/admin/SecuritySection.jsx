@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { securityAdminAPI } from '../../api/securityAPI'
 import { useAuth } from '../../context/AuthContext'
+import { getInitials } from '../../utils/initials'
 import toast from 'react-hot-toast'
 
 const P = {
@@ -32,9 +33,7 @@ const P = {
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 function Avatar({ name, size = 44 }) {
-  const initials = name
-    ? name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
-    : '??'
+  const initials = getInitials(name, '??')
   return (
     <div className="rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
       style={{ width: size, height: size, background: P.primary, fontSize: size * 0.3 }}>

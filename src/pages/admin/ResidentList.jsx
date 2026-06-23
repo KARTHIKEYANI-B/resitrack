@@ -10,6 +10,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner'
 import Modal from '../../components/common/Modal'
 import EmptyState from '../../components/common/EmptyState'
 import { formatDate } from '../../utils/dateUtils'
+import { getInitials } from '../../utils/initials'
 import toast from 'react-hot-toast'
 
 const P = {
@@ -33,9 +34,7 @@ const INIT_EDIT = {
 // ── PROFILE AVATAR ────────────────────────────────────────────────────────
 function ResidentAvatar({ name, photoUrl, size = 36 }) {
   const [imgError, setImgError] = useState(false)
-  const initials = name
-    ? name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
-    : '?'
+  const initials = getInitials(name)
   const hue = name
     ? [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360
     : 200
@@ -126,6 +125,19 @@ function PopulationSummary() {
     { label: 'Active Portal Users',   value: pop?.totalActiveUsers ?? 0,   icon: Activity,   color: '#2E7D32' },
   ]
 
+  // ── Super Admin count card ──────────────────────────────────────────────
+  // Super Admin accounts are already included in "Total Population" (via
+  // the backend's adminsWithNoResidentLink), but previously had no card of
+  // their own — only a small indented line inside "Full Breakdown" under
+  // "Admins" (which itself EXCLUDES super admins from its own count). That
+  // made it look like Total Population had unexplained "extra" people.
+  //
+  // This card uses the exact same pop?.totalSuperAdmins value already
+  // returned by GET /admin/residents/population (PopulationService) — no
+  // new calculation, no change to totalPopulation, totalAdmins, or any
+  // other existing figure.
+  const superAdminCount = pop?.totalSuperAdmins ?? 0
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -138,6 +150,16 @@ function PopulationSummary() {
             <p className="text-2xl font-bold font-mono" style={{ color: P.dark }}>{s.value}</p>
           </div>
         ))}
+        {/* Dedicated Super Admin card — separate from "Admins" so the two
+            never get conflated, and so Total Population is fully explained
+            by Property Owners + Family Members + Admins + Super Admins. */}
+        <div className="bg-white rounded-2xl p-4 border" style={{ borderColor: P.border }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Shield size={14} style={{ color: '#4A0072' }} />
+            <p className="text-xs font-medium" style={{ color: P.muted }}>Super Admins</p>
+          </div>
+          <p className="text-2xl font-bold font-mono" style={{ color: P.dark }}>{superAdminCount}</p>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border p-4 space-y-2" style={{ borderColor: P.border }}>
@@ -151,6 +173,11 @@ function PopulationSummary() {
             <span className="font-mono font-semibold text-sm" style={{ color: P.dark }}>{s.value}</span>
           </div>
         ))}
+        <div className="flex items-center justify-between pt-2 mt-1 border-t-2" style={{ borderColor: P.border }}>
+          <span className="text-[11px]" style={{ color: P.muted }}>
+            Total Population includes Admin and Super Admin accounts that don't have a separate resident profile.
+          </span>
+        </div>
       </div>
 
       {/* ── Family Member Age Groups — From / To range filter ─────────── */}

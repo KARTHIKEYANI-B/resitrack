@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Phone, Mail, Calendar, ShieldCheck, Search, UserCircle2 } from 'lucide-react'
 import { memberAPI } from '../../api/memberAPI'
+import { getInitials } from '../../utils/initials'
 import toast from 'react-hot-toast'
 
 const P = {
@@ -26,9 +27,7 @@ const POSITION_COLORS = {
 }
 
 function Avatar({ name, photo, size = 64 }) {
-  const initials = name
-    ? name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
-    : '??'
+  const initials = getInitials(name, '??')
   const [errored, setErrored] = useState(false)
 
   if (photo && !errored) {
@@ -180,10 +179,10 @@ export default function UserMembersList() {
       </div>
 
       {/* Info banner */}
-      {/* <div className="mb-5 px-4 py-3 rounded-xl text-xs"
+      <div className="mb-5 px-4 py-3 rounded-xl text-xs"
         style={{ background: P.accent, border: `1px solid ${P.border}`, color: P.body }}>
         These are your elected Association Committee Members. Reach out to them for any queries related to your flat/villa.
-      </div> */}
+      </div>
 
       {/* Search */}
       <div className="relative mb-5">

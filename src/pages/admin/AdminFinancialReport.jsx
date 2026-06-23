@@ -7,7 +7,6 @@ import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
-// Full month names for the dropdowns — January through December
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const FULL_MONTHS = [
   'January','February','March','April','May','June',
@@ -16,12 +15,22 @@ const FULL_MONTHS = [
 const CY     = new Date().getFullYear()
 const YEARS  = Array.from({ length: 5 }, (_, i) => CY - i)
 
+// Current Financial Year start year (Apr → Mar convention), mirroring
+// ResidentPaymentSummaryService.getCurrentFinancialYearStart() on the
+// backend: if today's month is Apr (4) or later, the current FY started
+// this calendar year; otherwise it started last calendar year.
+// e.g. today = Jan 2026 → FY start year = 2025 (FY 2025-26).
+//      today = Jun 2026 → FY start year = 2026 (FY 2026-27).
+const CURRENT_FY_START_YEAR = (() => {
+  const now = new Date()
+  return now.getMonth() + 1 >= 4 ? now.getFullYear() : now.getFullYear() - 1
+})()
+
 const APARTMENT = 'R R Dhurya Owners Welfare Association'
 
 const fmt  = (v) => {
   const n = Number(v)
   if (isNaN(n) || n === 0) return '—'
-  // Always full amount — no K, L, M abbreviations
   return '₹\u00A0' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 const fmtN = (v) => {
@@ -45,10 +54,14 @@ const downloadBlob = (blob, filename) => {
 
 export default function AdminFinancialReport() {
   const [tab,        setTab]        = useState('collection')  // 'collection' | 'expenses'
-  const [year,       setYear]       = useState(CY)
-  // FIXED: default to full calendar year Jan (1) → Dec (12) so all months work
-  const [startMonth, setStartMonth] = useState(1)
-  const [endMonth,   setEndMonth]   = useState(12)
+  // Default to the current Financial Year (Apr → Mar), not Calendar Year.
+  // `year` is the FY start year (e.g. 2025 means FY 2025-26 = Apr 2025–Mar 2026),
+  // matching the convention already used by Financial Summary
+  // (FinancialReportService.getFinancialSummary) and the Resident
+  // Paid/Unpaid Detail screen (ResidentPaymentSummaryService).
+  const [year,       setYear]       = useState(CURRENT_FY_START_YEAR)
+  const [startMonth, setStartMonth] = useState(4)
+  const [endMonth,   setEndMonth]   = useState(3)
   const [loading,    setLoading]    = useState(true)
   const [exporting,  setExporting]  = useState(null)
 
@@ -110,9 +123,9 @@ export default function AdminFinancialReport() {
       {/* ── Filters ──────────────────────────────────────────── */}
       <div className="card py-3 px-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-[#1f7a8c] whitespace-nowrap">Year</label>
-          <select value={year} onChange={e => setYear(+e.target.value)} className="input-field w-28">
-            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+          <label className="text-xs text-[#1f7a8c] whitespace-nowrap">Financial Year</label>
+          <select value={year} onChange={e => setYear(+e.target.value)} className="input-field w-32">
+            {YEARS.map(y => <option key={y} value={y}>{`FY ${y}-${String(y + 1).slice(-2)}`}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
@@ -153,7 +166,7 @@ export default function AdminFinancialReport() {
       </div>
 
       {/* ── Summary Cards ────────────────────────────────────── */}
-      <SummaryCards coll={collData} exp={expData} summary={summary} />
+      <SummaryCards coll={collData} exp={expData} summary={summary} year={year} />
 
       {/* ── Tab Switch ───────────────────────────────────────── */}
       <div className="flex items-center gap-2">
@@ -185,20 +198,22 @@ export default function AdminFinancialReport() {
   )
 }
 
-function SummaryCards({ coll, exp, summary }) {
+function SummaryCards({ coll, exp, summary, year }) {
   const openBal  = coll?.openingBalance   ?? 0
   const collected= coll?.totalCollected   ?? 0
   const expenses = exp?.totalExpenses?.toNumber?.() ?? Number(exp?.totalExpenses ?? 0)
   const closing  = coll?.closingBalance   ?? (collected - expenses)
   const pending  = coll?.pendingDues      ?? 0
 
-  // Balance Breakdown — sourced from /admin/financial-report/summary
-  // bankBalance = all-time bank collections − all-time bank expenses
-  // cashBalance = all-time cash collections − all-time cash expenses
-  // totalBalance = bankBalance + cashBalance
   const bankBal  = summary?.bankBalance  ?? 0
   const cashBal  = summary?.cashBalance  ?? 0
   const totalBal = bankBal + cashBal
+
+  // Financial Year label (Apr–Mar), e.g. "FY 2025-26" — sourced from the
+  // backend response (single source of truth) with a local fallback so the
+  // label still renders correctly even before the summary call resolves.
+  const fyLabel = summary?.financialYearLabel
+    ?? (year ? `FY ${year}-${String(year + 1).slice(-2)}` : null)
 
   const cards = [
     { label: 'Opening Balance (Period Start)',  value: fmt(openBal),   icon: Wallet,       sub: 'Start of period' },
@@ -210,6 +225,11 @@ function SummaryCards({ coll, exp, summary }) {
 
   return (
     <div className="space-y-3">
+      {fyLabel && (
+        <p className="text-[11px] font-semibold text-[#1f7a8c] uppercase tracking-wide">
+          Financial Summary — {fyLabel} (Apr–Mar)
+        </p>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
         {cards.map(({ label, value, icon: Icon, sub }) => (
           <div key={label} className="card card-hover py-4 text-center">
@@ -278,7 +298,7 @@ function CollectionReport({ data, year, onExport, exporting }) {
         {/* Report Header */}
         <div className="border-b border-[#bfdbf7] px-5 py-4 text-center bg-white/60">
           <p className="text-sm font-bold text-[#022b3a] tracking-wide uppercase">{APARTMENT}</p>
-          <p className="text-xs text-[#022b3a]/60 mt-0.5">Collection Statement — {year}</p>
+          <p className="text-xs text-[#022b3a]/60 mt-0.5">Collection Statement — {data.periodLabel ?? year}</p>
           <p className="text-[10px] text-[#1f7a8c] mt-0.5">
             Generated: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
           </p>
