@@ -232,7 +232,7 @@ export default function MaintenanceManagement() {
   const [configModal, setConfigModal] = useState(false)
   const [editConfig,  setEditConfig]  = useState(null)
   const [configForm,  setConfigForm]  = useState({
-    maintenanceType: 'Monthly', ratePerSqFt: '', amount: '',
+    maintenanceType: 'Monthly', propertyType: 'FLAT', ratePerSqFt: '', amount: '',
     dueDate: todayStr(), lateFee: '', lateFeeEnabled: false,
   })
 
@@ -351,6 +351,7 @@ export default function MaintenanceManagement() {
     try {
       const p = {
         ...configForm,
+        propertyType: configForm.propertyType || null,
         ratePerSqFt: configForm.ratePerSqFt ? Number(configForm.ratePerSqFt) : null,
         amount:      configForm.amount       ? Number(configForm.amount)       : null,
         lateFee:     Number(configForm.lateFee) || 0,
@@ -462,21 +463,39 @@ export default function MaintenanceManagement() {
       {/* ── Config tab ───────────────────────────────────────────── */}
       {tab === 'config' && (
         <div className="space-y-3">
-          {/* Info banner — Feature 1 */}
-          {/* <div className="flex gap-2 bg-sky-50 border border-sky-200 rounded-xl px-3 py-2.5">
-            <Calculator size={13} className="text-sky-500 flex-shrink-0 mt-0.5" />
-            <p className="text-[11px] text-sky-600 leading-relaxed">
-              <strong>Rate Per Sq.Ft:</strong> When configured, the Create Batch modal offers a
-              "Calculate by Sq.Ft" mode — each owner's charge is automatically calculated as
-              <em> Rate × their registered Sq.Ft</em>. Fixed Amount works as before.
-            </p>
-          </div> */}
+          {(() => {
+            const flatActive  = configs.filter(c => c.propertyType === 'FLAT'  && c.active !== false)
+            const villaActive = configs.filter(c => c.propertyType === 'VILLA' && c.active !== false)
+            const dupes = [
+              ...(flatActive.length  > 1 ? [`Flat (${flatActive.length} active rows)`]  : []),
+              ...(villaActive.length > 1 ? [`Villa (${villaActive.length} active rows)`] : []),
+            ]
+            if (!dupes.length) return null
+            return (
+              <div className="flex gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+                <AlertCircle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-red-700 leading-relaxed">
+                  <strong>Multiple active rate configs found for: {dupes.join(', ')}.</strong>{' '}
+                  Only the most recently created one is being used for billing. Delete the
+                  others below, or save one of them again to make it the only active rate.
+                </p>
+              </div>
+            )
+          })()}
 
           <div className="flex justify-end">
             <button
               onClick={() => {
                 setEditConfig(null)
-                setConfigForm({ maintenanceType: 'Monthly', ratePerSqFt: '', amount: '', dueDate: todayStr(), lateFee: '', lateFeeEnabled: false })
+                // Default to whichever property type doesn't have an active
+                // config yet, so admins are less likely to accidentally
+                // leave the dropdown on its default and create a second
+                // row for the SAME property type (which previously caused
+                // "most recently created wins" ambiguity).
+                const hasFlat  = configs.some(c => c.propertyType === 'FLAT'  && c.active !== false)
+                const hasVilla = configs.some(c => c.propertyType === 'VILLA' && c.active !== false)
+                const nextType = !hasFlat ? 'FLAT' : !hasVilla ? 'VILLA' : 'FLAT'
+                setConfigForm({ maintenanceType: 'Monthly', propertyType: nextType, ratePerSqFt: '', amount: '', dueDate: todayStr(), lateFee: '', lateFeeEnabled: false })
                 setConfigModal(true)
               }}
               className="btn-primary text-xs flex items-center gap-2">
@@ -492,7 +511,7 @@ export default function MaintenanceManagement() {
                 <table className="w-full min-w-[500px]">
                   <thead className="border-b border-cyan-200 bg-cyan-50">
                     <tr>
-                      {['Property Type', 'Rate per Sq. Ft', 'Fixed Amount', 'Due Date', 'Late Fee', 'Actions'].map(h => (
+                      {['Property Type', 'Rate per Sq. Ft', 'Fixed Amount', 'Due Date', 'Late Fee', 'Status', 'Actions'].map(h => (
                         <th key={h} className="table-header">{h}</th>
                       ))}
                     </tr>
@@ -500,7 +519,16 @@ export default function MaintenanceManagement() {
                   <tbody>
                     {configs.map(c => (
                       <tr key={c.id} className="table-row">
-                        <td className="table-cell font-medium text-blue-950">{c.maintenanceType}</td>
+                        <td className="table-cell font-medium text-blue-950">
+                          {c.propertyType === 'VILLA' ? (
+                            <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-lg text-xs">Villa</span>
+                          ) : c.propertyType === 'FLAT' ? (
+                            <span className="inline-flex items-center gap-1 text-sky-700 bg-sky-100 border border-sky-200 px-2 py-0.5 rounded-lg text-xs">Flat</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg text-xs" title="Applies to both Flat and Villa owners (legacy shared rate)">Both (Legacy)</span>
+                          )}
+                          <p className="text-[10px] text-sky-400 mt-0.5">{c.maintenanceType}</p>
+                        </td>
                         <td className="table-cell font-mono">
                           {c.ratePerSqFt ? (
                             <span className="inline-flex items-center gap-1 text-sky-700 bg-sky-100 border border-sky-200 px-2 py-0.5 rounded-lg text-xs">
@@ -512,10 +540,17 @@ export default function MaintenanceManagement() {
                         <td className="table-cell whitespace-nowrap">{c.dueDate || '—'}</td>
                         <td className="table-cell">{c.lateFeeEnabled ? fmt(c.lateFee) : 'Off'}</td>
                         <td className="table-cell">
+                          {c.active !== false ? (
+                            <span className="inline-flex items-center gap-1 text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-lg text-xs">Active</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-lg text-xs">Inactive</span>
+                          )}
+                        </td>
+                        <td className="table-cell">
                           <div className="flex gap-3">
                             <button onClick={() => {
                               setEditConfig(c)
-                              setConfigForm({ maintenanceType: c.maintenanceType, ratePerSqFt: c.ratePerSqFt ?? '', amount: c.amount ?? '', dueDate: c.dueDate ?? todayStr(), lateFee: c.lateFee ?? '', lateFeeEnabled: c.lateFeeEnabled })
+                              setConfigForm({ maintenanceType: c.maintenanceType, propertyType: c.propertyType || 'FLAT', ratePerSqFt: c.ratePerSqFt ?? '', amount: c.amount ?? '', dueDate: c.dueDate ?? todayStr(), lateFee: c.lateFee ?? '', lateFeeEnabled: c.lateFeeEnabled })
                               setConfigModal(true)
                             }} className="text-xs text-sky-600 hover:text-sky-800">Edit</button>
                             <button onClick={async () => {
@@ -769,19 +804,41 @@ export default function MaintenanceManagement() {
       <Modal isOpen={configModal} onClose={() => setConfigModal(false)}
         title={editConfig ? 'Edit Rate Config' : 'New Rate Config'}>
         <div className="space-y-4">
-          <div>
-            <label className="label">Maintenance Type</label>
-            <select value={configForm.maintenanceType}
-              onChange={e => setConfigForm({ ...configForm, maintenanceType: e.target.value })}
-              className="input-field">
-              {['Monthly', 'Quarterly', 'Yearly', 'Special'].map(t => <option key={t}>{t}</option>)}
-            </select>
+          {!editConfig && configs.some(c => c.propertyType === configForm.propertyType && c.active !== false) && (
+            <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+              <AlertCircle size={13} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                An active <strong>{configForm.propertyType === 'VILLA' ? 'Villa' : 'Flat'}</strong> rate already
+                exists. Saving this will replace it as the active rate for {configForm.propertyType === 'VILLA' ? 'Villa' : 'Flat'} owners —
+                make sure Property Type above is set correctly before saving.
+              </p>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Maintenance Type</label>
+              <select value={configForm.maintenanceType}
+                onChange={e => setConfigForm({ ...configForm, maintenanceType: e.target.value })}
+                className="input-field">
+                {['Monthly', 'Quarterly', 'Yearly', 'Special'].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Property Type</label>
+              <select value={configForm.propertyType}
+                onChange={e => setConfigForm({ ...configForm, propertyType: e.target.value })}
+                className="input-field">
+                <option value="FLAT">Flat</option>
+                <option value="VILLA">Villa</option>
+              </select>
+              <p className="text-[10px] text-sky-400 mt-1">Rate applies only to this property type's owners</p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label flex items-center gap-1.5">
                 <Calculator size={12} className="text-sky-500" />
-                Rate per Sq.Ft (₹)
+                {configForm.propertyType === 'VILLA' ? 'Villa Rate' : 'Flat Rate'} per Sq.Ft (₹)
               </label>
               <input type="number" value={configForm.ratePerSqFt}
                 onChange={e => setConfigForm({ ...configForm, ratePerSqFt: e.target.value })}

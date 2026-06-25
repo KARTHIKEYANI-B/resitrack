@@ -102,115 +102,66 @@ function OwnerTable({ owners, search }) {
   }
 
   return (
-    <>
-      {/* Desktop / tablet table */}
-      <div className="overflow-x-auto hidden md:block">
-        <table className="w-full min-w-[860px]">
-          <thead className="border-b border-[#bfdbf7] bg-white/50">
-            <tr>
-              {['S.No', 'Resident Name', 'Flat / Villa', 'Sq. Ft', 'Rate per Sq. Ft', 'Maintenance Amount', 'Amount Paid', 'Pending Balance', 'Status'].map(h => (
-                <th key={h} className="table-header whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((o, idx) => {
-              const status = resolveStatus(o)
-              return (
-                <tr key={o.residentId ?? idx} className="table-row">
-                  <td className="table-cell font-mono text-xs text-[#1f7a8c] text-center">
-                    {idx + 1}
-                  </td>
-                  <td className="table-cell">
-                    <p className="font-medium text-sm text-[#022b3a]">{o.fullName}</p>
-                  </td>
-                  <td className="table-cell whitespace-nowrap">
-                    <p className="font-mono text-xs">{o.flatNumber}</p>
-                    <p className="text-[10px] text-[#1f7a8c]">{o.flatType || o.propertyType}</p>
-                  </td>
-                  <td className="table-cell font-mono text-xs whitespace-nowrap">
-                    {o.sqFt ? `${Number(o.sqFt).toLocaleString('en-IN')} sq.ft` : '—'}
-                  </td>
-                  <td className="table-cell font-mono text-xs whitespace-nowrap">
-                    {o.ratePerSqFt ? `₹${Number(o.ratePerSqFt).toFixed(2)}` : '—'}
-                  </td>
-                  <td className="table-cell font-mono text-xs font-semibold text-[#022b3a] whitespace-nowrap">
-                    {formatCurrency(o.maintenanceAmount ?? 0)}
-                    {/* {o.sqFt && o.ratePerSqFt && (
-                      <p className="text-[9px] text-[#1f7a8c] font-normal mt-0.5">
-                        {Number(o.sqFt).toLocaleString('en-IN')} × ₹{Number(o.ratePerSqFt).toFixed(2)}
-                      </p>
-                    )} */}
-                  </td>
-                  {/* Paid amount – green; shows property-level total (owner + FM) */}
-                  <td className="table-cell font-mono text-xs text-green-600 whitespace-nowrap">
-                    {formatCurrency(o.paidAmount ?? 0)}
-                  </td>
-                  {/* Pending amount – red; 0.00 when status = PAID */}
-                  <td className="table-cell font-mono text-xs font-semibold whitespace-nowrap"
-                      style={{ color: (o.pendingAmount ?? 0) > 0 ? '#ef4444' : '#16a34a' }}>
-                    {formatCurrency(o.pendingAmount ?? 0)}
-                  </td>
-                  {/* Status badge – derived purely from pendingAmount on the backend */}
-                  <td className="table-cell">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ${STATUS_STYLE[status] ?? STATUS_STYLE.UNPAID}`}>
-                      {STATUS_ICON[status]}
-                      {status}
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile: stacked cards */}
-      <div className="md:hidden divide-y divide-[#bfdbf7]">
-        {filtered.map((o, idx) => {
-          const status = resolveStatus(o)
-          return (
-            <div key={o.residentId ?? idx} className="p-4">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="border-b border-[#bfdbf7] bg-white/50">
+          <tr>
+            {['S.No', 'Resident Name', 'Flat / Villa', 'Sq. Ft', 'Rate per Sq. Ft', 'Maintenance Amount', 'Amount Paid', 'Pending Balance', 'Status'].map(h => (
+              <th key={h} className="table-header">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((o, idx) => {
+            const status = resolveStatus(o)
+            return (
+              <tr key={o.residentId ?? idx} className="table-row">
+                <td className="table-cell font-mono text-xs text-[#1f7a8c] text-center">
+                  {idx + 1}
+                </td>
+                <td className="table-cell">
                   <p className="font-medium text-sm text-[#022b3a]">{o.fullName}</p>
-                  <p className="font-mono text-xs mt-0.5">{o.flatNumber} <span className="text-[10px] text-[#1f7a8c]">({o.flatType || o.propertyType})</span></p>
-                </div>
-                <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap flex-shrink-0 ${STATUS_STYLE[status] ?? STATUS_STYLE.UNPAID}`}>
-                  {STATUS_ICON[status]}
-                  {status}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                  <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Sq. Ft</p>
-                  <p className="font-mono text-xs">{o.sqFt ? `${Number(o.sqFt).toLocaleString('en-IN')} sq.ft` : '—'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Rate / Sq.Ft</p>
-                  <p className="font-mono text-xs">{o.ratePerSqFt ? `₹${Number(o.ratePerSqFt).toFixed(2)}` : '—'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Maintenance</p>
-                  <p className="font-mono text-xs font-semibold text-[#022b3a]">{formatCurrency(o.maintenanceAmount ?? 0)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Paid</p>
-                  <p className="font-mono text-xs text-green-600">{formatCurrency(o.paidAmount ?? 0)}</p>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-[#bfdbf7] flex items-center justify-between">
-                <span className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Pending Balance</span>
-                <span className="font-mono text-sm font-semibold"
-                  style={{ color: (o.pendingAmount ?? 0) > 0 ? '#ef4444' : '#16a34a' }}>
+                </td>
+                <td className="table-cell">
+                  <p className="font-mono text-xs">{o.flatNumber}</p>
+                  <p className="text-[10px] text-[#1f7a8c]">{o.flatType || o.propertyType}</p>
+                </td>
+                <td className="table-cell font-mono text-xs">
+                  {o.sqFt ? `${Number(o.sqFt).toLocaleString('en-IN')} sq.ft` : '—'}
+                </td>
+                <td className="table-cell font-mono text-xs">
+                  {o.ratePerSqFt ? `₹${Number(o.ratePerSqFt).toFixed(2)}` : '—'}
+                </td>
+                <td className="table-cell font-mono text-xs font-semibold text-[#022b3a]">
+                  {formatCurrency(o.maintenanceAmount ?? 0)}
+                  {/* {o.sqFt && o.ratePerSqFt && (
+                    <p className="text-[9px] text-[#1f7a8c] font-normal mt-0.5">
+                      {Number(o.sqFt).toLocaleString('en-IN')} × ₹{Number(o.ratePerSqFt).toFixed(2)}
+                    </p>
+                  )} */}
+                </td>
+                {/* Paid amount – green; shows property-level total (owner + FM) */}
+                <td className="table-cell font-mono text-xs text-green-600">
+                  {formatCurrency(o.paidAmount ?? 0)}
+                </td>
+                {/* Pending amount – red; 0.00 when status = PAID */}
+                <td className="table-cell font-mono text-xs font-semibold"
+                    style={{ color: (o.pendingAmount ?? 0) > 0 ? '#ef4444' : '#16a34a' }}>
                   {formatCurrency(o.pendingAmount ?? 0)}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </>
+                </td>
+                {/* Status badge – derived purely from pendingAmount on the backend */}
+                <td className="table-cell">
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_STYLE[status] ?? STATUS_STYLE.UNPAID}`}>
+                    {STATUS_ICON[status]}
+                    {status}
+                  </span>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -275,7 +226,8 @@ export default function MaintenanceList() {
 
   const flatOwners  = data?.flatOwners  ?? []
   const villaOwners = data?.villaOwners ?? []
-  const ratePerSqFt = data?.ratePerSqFt
+  const flatRatePerSqFt  = data?.flatRatePerSqFt  ?? data?.ratePerSqFt
+  const villaRatePerSqFt = data?.villaRatePerSqFt
   const monthLabel  = data?.monthLabel ?? `${MONTHS[selMonth - 1]} ${selYear}`
 
   const totalFlat   = data?.totalFlatMaintenance  ?? 0
@@ -328,12 +280,24 @@ export default function MaintenanceList() {
         >
           {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
-        {ratePerSqFt && (
-          <div className="ml-auto flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">
-            <IndianRupee size={12} className="text-sky-600" />
-            <span className="text-xs text-sky-700 font-medium">
-              Rate: ₹{Number(ratePerSqFt).toFixed(2)} / sq.ft
-            </span>
+        {(flatRatePerSqFt || villaRatePerSqFt) && (
+          <div className="ml-auto flex items-center gap-2">
+            {flatRatePerSqFt && (
+              <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">
+                <IndianRupee size={12} className="text-sky-600" />
+                <span className="text-xs text-sky-700 font-medium">
+                  Flat Rate: ₹{Number(flatRatePerSqFt).toFixed(2)} / sq.ft
+                </span>
+              </div>
+            )}
+            {villaRatePerSqFt && (
+              <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1.5">
+                <IndianRupee size={12} className="text-purple-600" />
+                <span className="text-xs text-purple-700 font-medium">
+                  Villa Rate: ₹{Number(villaRatePerSqFt).toFixed(2)} / sq.ft
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
