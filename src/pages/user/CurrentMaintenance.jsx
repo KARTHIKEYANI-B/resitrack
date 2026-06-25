@@ -578,9 +578,9 @@ function ScreenshotUpload({ screenshot, screenshotName, fileRef, label = 'Paymen
         onClick={() => fileRef.current?.click()}
         className="border-2 border-dashed border-[#bfdbf7] rounded-xl p-5 text-center cursor-pointer hover:border-[#1f7a8c] hover:bg-[#f0f8fb] transition-all">
         {screenshotName ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-[#022b3a]">
-            <FileImage size={16} className="text-green-500" />
-            <span className="font-medium">{screenshotName}</span>
+          <div className="flex items-center justify-center gap-2 text-sm text-[#022b3a] px-2 min-w-0">
+            <FileImage size={16} className="text-green-500 flex-shrink-0" />
+            <span className="font-medium truncate">{screenshotName}</span>
           </div>
         ) : (
           <>

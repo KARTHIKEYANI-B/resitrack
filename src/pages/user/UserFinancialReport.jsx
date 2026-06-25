@@ -152,13 +152,13 @@ export default function UserFinancialReport() {
             {fmt(balance)}
           </span>
         </div>
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
           <span className="text-[#1f7a8c]">Bank Collected Amount (UPI / NEFT / RTGS / Cheque etc.)</span>
-          <span className="font-mono font-semibold text-[#022b3a]">{fmt(bankBalance)}</span>
+          <span className="font-mono font-semibold text-[#022b3a] flex-shrink-0">{fmt(bankBalance)}</span>
         </div>
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
           <span className="text-[#1f7a8c]">Cash Collected Amount</span>
-          <span className="font-mono font-semibold text-[#022b3a]">{fmt(cashBalance)}</span>
+          <span className="font-mono font-semibold text-[#022b3a] flex-shrink-0">{fmt(cashBalance)}</span>
         </div>
       </div>
 

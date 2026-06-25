@@ -218,11 +218,11 @@ export default function AdminNotifications() {
                       )}
 
                       {isPendingVerif && n.paymentId && unread && (
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <button
                             onClick={() => handleApprove(n.paymentId, n.id)}
                             disabled={actionId === n.id}
-                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all">
+                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all whitespace-nowrap">
                             {actionId === n.id
                               ? <div className="w-3 h-3 border border-green-400 border-t-transparent rounded-full animate-spin" />
                               : <CheckCircle size={11} />}
@@ -231,7 +231,7 @@ export default function AdminNotifications() {
                           <button
                             onClick={() => handleReject(n.paymentId, n.id)}
                             disabled={actionId === n.id}
-                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all">
+                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all whitespace-nowrap">
                             Reject
                           </button>
                         </div>

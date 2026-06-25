@@ -143,7 +143,7 @@ export default function AdminFinancialReport() {
           </select>
         </div>
         {/* Quick-select presets */}
-        <div className="flex gap-2 ml-auto">
+        <div className="flex gap-2 flex-wrap lg:ml-auto">
           {[
             { label: 'Jan–Dec (CY)', s: 1,  e: 12 },
             { label: 'Apr–Mar (FY)', s: 4,  e: 3  },
@@ -154,7 +154,7 @@ export default function AdminFinancialReport() {
           ].map(p => (
             <button key={p.label}
               onClick={() => { setStartMonth(p.s); setEndMonth(p.e) }}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${
                 startMonth === p.s && endMonth === p.e
                   ? 'bg-white text-[#022b3a] border-[#bfdbf7]'
                   : 'bg-[#e1e5f2] text-[#022b3a]/60 border-[#bfdbf7] hover:text-[#022b3a]'
@@ -169,13 +169,13 @@ export default function AdminFinancialReport() {
       <SummaryCards coll={collData} exp={expData} summary={summary} year={year} />
 
       {/* ── Tab Switch ───────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {[
           { key: 'collection', icon: TrendingUp,   label: 'Income / Collection Report' },
           { key: 'expenses',   icon: TrendingDown,  label: 'Expenditure Report' },
         ].map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all border whitespace-nowrap ${
               tab === key
                 ? 'bg-white text-[#022b3a] border-[#bfdbf7]'
                 : 'bg-white text-[#022b3a]/60 border-[#bfdbf7] hover:text-[#022b3a] hover:border-[#bfdbf7]'
@@ -428,7 +428,7 @@ function ExpenseReport({ data, onExport, exporting }) {
 
         {/* Main expense table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs min-w-[680px]">
             <thead>
               <tr className="border-b border-[#bfdbf7] bg-white">
                 <th className="report-th w-10">#</th>
@@ -470,7 +470,7 @@ function ExpenseReport({ data, onExport, exporting }) {
         </div>
 
         {/* Category breakdown + Bank summary */}
-        <div className="border-t border-[#bfdbf7] grid grid-cols-1 lg:grid-cols-2 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-700">
+        <div className="border-t border-[#bfdbf7] grid grid-cols-1 lg:grid-cols-2 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[#bfdbf7]">
 
           {/* Category breakdown */}
           <div className="p-4">

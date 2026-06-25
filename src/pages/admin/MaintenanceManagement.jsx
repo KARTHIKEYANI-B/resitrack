@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Plus, Search, RefreshCw, Wrench, Users, CheckCircle,
   Clock, ChevronDown, ChevronUp, Trash2, ToggleLeft, ToggleRight,
-  CalendarDays, IndianRupee, Tag, AlertCircle, X, Calculator
+  CalendarDays, IndianRupee, Tag, AlertCircle, X, Calculator,
+  ListChecks, User, Loader2
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
@@ -35,6 +36,83 @@ const BLANK = {
   title: '', description: '', category: 'Monthly Maintenance',
   amount: '', dueDate: todayStr(), penaltyAmount: '', penaltyEnabled: false,
   assignmentType: 'ALL', blockPrefix: '', selectedFlats: [],
+}
+
+/* ── Paid List section (Requirement 7) ─────────────────────────
+   Resident Name · Flat/Villa Number · Paid Date · Paid By          */
+function PaidListSection({ batchId }) {
+  const [rows,    setRows]    = useState(null)   // null = not loaded yet
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await adminAPI.getBatchPaidList(batchId)
+      const data = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+      setRows(data)
+    } catch {
+      toast.error('Could not load paid list')
+      setRows([])
+    } finally { setLoading(false) }
+  }, [batchId])
+
+  useEffect(() => { load() }, [load])
+
+  return (
+    <div className="rounded-xl border border-cyan-200 bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-cyan-50 border-b border-cyan-200">
+        <p className="text-xs font-semibold text-blue-950 flex items-center gap-1.5">
+          <ListChecks size={13} className="text-sky-600" />Paid List
+        </p>
+        <button onClick={load} className="text-[10px] text-sky-500 hover:text-sky-700 flex items-center gap-1">
+          <RefreshCw size={10} />Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 size={16} className="text-sky-400 animate-spin" />
+        </div>
+      ) : !rows || rows.length === 0 ? (
+        <p className="text-xs text-sky-400 text-center py-6">No payments verified yet for this batch.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-sky-500 border-b border-cyan-100">
+                <th className="px-3 py-2 font-medium">Resident Name</th>
+                <th className="px-3 py-2 font-medium">Flat/Villa No.</th>
+                <th className="px-3 py-2 font-medium">Paid Date</th>
+                <th className="px-3 py-2 font-medium">Paid By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.batchPaymentId} className="border-b border-cyan-50 last:border-0">
+                  <td className="px-3 py-2 text-blue-950 font-medium">{r.residentName || '—'}</td>
+                  <td className="px-3 py-2 text-blue-900 font-mono">{r.flatNumber || '—'}</td>
+                  <td className="px-3 py-2 text-sky-600">{r.paidDate || '—'}</td>
+                  <td className="px-3 py-2 text-sky-600">
+                    <span className="inline-flex items-center gap-1">
+                      {r.paidByRole === 'FAMILY_MEMBER'
+                        ? <Users size={11} className="text-purple-500" />
+                        : <User size={11} className="text-sky-500" />}
+                      {r.paidBy || '—'}
+                      {r.paidByRole && (
+                        <span className="text-[10px] text-sky-400">
+                          ({r.paidByRole === 'FAMILY_MEMBER' ? 'Family Member' : 'Owner'})
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }
 
 /* ── Batch row card ─────────────────────────────────────────── */
@@ -108,6 +186,11 @@ function BatchCard({ batch, onDelete, onStatusChange }) {
           {batch.description && (
             <p className="text-xs text-sky-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">{batch.description}</p>
           )}
+
+          {/* Requirement 7: Paid List — Resident Name, Flat/Villa No., Paid Date, Paid By.
+              Lazy-loaded only while this card is expanded, scoped to this batch's own id. */}
+          <PaidListSection batchId={batch.id} />
+
           <div className="flex flex-wrap gap-2">
             {batch.status === 'ACTIVE' && (
               <button onClick={() => onStatusChange(batch.id, 'COMPLETED')}

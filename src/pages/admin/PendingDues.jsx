@@ -104,12 +104,12 @@ export default function PendingDues() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title text-xl">Outstanding Maintenance Dues</h1>
           <p className="section-subtitle">Residents with outstanding maintenance balances</p>
         </div>
-        <button onClick={fetchAll} className="btn-secondary flex items-center gap-2">
+        <button onClick={fetchAll} className="btn-secondary flex items-center justify-center gap-2 self-start sm:self-auto">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
@@ -169,8 +169,9 @@ export default function PendingDues() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {/* Desktop / tablet table */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full min-w-[880px]">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
                     {[
@@ -178,7 +179,7 @@ export default function PendingDues() {
                       'Amount Assigned', 'Amount Paid', 'Balance Due', 'Due Date',
                       'Status', 'Actions'
                     ].map(h => (
-                      <th key={h} className="table-header">{h}</th>
+                      <th key={h} className="table-header whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -188,15 +189,15 @@ export default function PendingDues() {
                       <td className="table-cell">
                         <p className="font-medium text-sm text-[#022b3a]">{d.residentName}</p>
                       </td>
-                      <td className="table-cell">
+                      <td className="table-cell whitespace-nowrap">
                         <p className="font-mono text-xs">{d.flatNumber}</p>
                         <p className="text-[10px] text-[#1f7a8c]">{d.propertyType}</p>
                       </td>
-                      <td className="table-cell text-xs">{d.month}</td>
-                      <td className="table-cell font-mono text-xs">{formatCurrency(d.assignedAmount ?? 0)}</td>
-                      <td className="table-cell font-mono text-xs text-green-500">{formatCurrency(d.paidSoFar ?? 0)}</td>
-                      <td className="table-cell font-mono text-xs text-red-400 font-semibold">{formatCurrency(d.remainingDue ?? 0)}</td>
-                      <td className="table-cell text-xs">{formatDate(d.dueDate)}</td>
+                      <td className="table-cell text-xs whitespace-nowrap">{d.month}</td>
+                      <td className="table-cell font-mono text-xs whitespace-nowrap">{formatCurrency(d.assignedAmount ?? 0)}</td>
+                      <td className="table-cell font-mono text-xs text-green-500 whitespace-nowrap">{formatCurrency(d.paidSoFar ?? 0)}</td>
+                      <td className="table-cell font-mono text-xs text-red-400 font-semibold whitespace-nowrap">{formatCurrency(d.remainingDue ?? 0)}</td>
+                      <td className="table-cell text-xs whitespace-nowrap">{formatDate(d.dueDate)}</td>
                       <td className="table-cell">{statusBadge(d.status)}</td>
                       <td className="table-cell">
                         <div className="flex gap-1.5">
@@ -212,7 +213,7 @@ export default function PendingDues() {
                               onClick={() => handlePenalty(d.id)}
                               disabled={actionId === d.id}
                               title="Apply late fee penalty"
-                              className="p-1.5 rounded-lg text-[#1f7a8c] hover:text-red-400 hover:bg-red-950/20 transition-all text-[10px] font-medium disabled:opacity-40">
+                              className="p-1.5 rounded-lg text-[#1f7a8c] hover:text-red-400 hover:bg-red-950/20 transition-all text-[10px] font-medium disabled:opacity-40 whitespace-nowrap">
                               +Fee
                             </button>
                           )}
@@ -222,6 +223,60 @@ export default function PendingDues() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile: stacked cards */}
+            <div className="md:hidden divide-y divide-[#bfdbf7]">
+              {paginated.map((d, idx) => (
+                <div key={d.id ?? idx} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="font-medium text-sm text-[#022b3a]">{d.residentName}</p>
+                      <p className="font-mono text-xs mt-0.5">{d.flatNumber} <span className="text-[10px] text-[#1f7a8c]">({d.propertyType})</span></p>
+                    </div>
+                    {statusBadge(d.status)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Billing Month</p>
+                      <p className="text-xs">{d.month}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Due Date</p>
+                      <p className="text-xs">{formatDate(d.dueDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Assigned</p>
+                      <p className="font-mono text-xs">{formatCurrency(d.assignedAmount ?? 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Paid</p>
+                      <p className="font-mono text-xs text-green-500">{formatCurrency(d.paidSoFar ?? 0)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-[#bfdbf7]">
+                    <p className="font-mono text-sm text-red-400 font-semibold">
+                      Due: {formatCurrency(d.remainingDue ?? 0)}
+                    </p>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleNotify(d.residentId)}
+                        disabled={actionId === d.residentId}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[#1f7a8c] hover:text-[#022b3a] hover:bg-[#bfdbf7] transition-all disabled:opacity-40 text-xs">
+                        <Bell size={12} /> Notify
+                      </button>
+                      {d.id && d.status !== 'OVERDUE' && (
+                        <button
+                          onClick={() => handlePenalty(d.id)}
+                          disabled={actionId === d.id}
+                          className="px-2.5 py-1.5 rounded-lg text-[#1f7a8c] hover:text-red-400 hover:bg-red-950/20 transition-all text-xs font-medium disabled:opacity-40">
+                          +Fee
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>

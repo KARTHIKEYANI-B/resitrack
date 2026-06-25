@@ -246,21 +246,21 @@ export default function ResidentApprovalPage() {
 
       {/* ── Bulk action bar ──────────────────────────────────── */}
       {selected.size > 0 && (
-        <div className="card py-3 px-4 flex items-center gap-3 border-[#bfdbf7]">
+        <div className="card py-3 px-4 flex flex-wrap items-center gap-3 border-[#bfdbf7]">
           <span className="text-sm text-[#022b3a] font-medium">{selected.size} selected</span>
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 flex-wrap sm:ml-auto">
             <button onClick={handleBulkApprove} disabled={bulkLoading}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all">
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all whitespace-nowrap">
               {bulkLoading ? <div className="w-3 h-3 border border-green-400 border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={12} />}
               Approve All Selected
             </button>
             <button onClick={() => { setBulkRejectOpen(true); setBulkRejectReason('') }}
               disabled={bulkLoading}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all">
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all whitespace-nowrap">
               <XCircle size={12} /> Reject All Selected
             </button>
             <button onClick={() => setSelected(new Set())}
-              className="text-xs text-[#1f7a8c] hover:text-[#022b3a] transition-colors px-2">
+              className="text-xs text-[#1f7a8c] hover:text-[#022b3a] transition-colors px-2 whitespace-nowrap">
               Clear
             </button>
           </div>
@@ -293,7 +293,7 @@ export default function ResidentApprovalPage() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-[#bfdbf7]">
             {filtered.map((resident) => {
               const isExpanded = expanded.has(resident.id)
               const isSelected = selected.has(resident.id)
@@ -305,7 +305,7 @@ export default function ResidentApprovalPage() {
                   {/* ── Main row ────────────────────────────── */}
                   <div
                     onClick={() => toggleExpand(resident.id)}
-                    className={`flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-all ${
+                    className={`flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3.5 cursor-pointer transition-all ${
                       isExpanded ? 'bg-[#e1e5f2]/50' : 'hover:bg-white/50'
                     } ${isSelected ? 'bg-[#e1e5f2]/30' : ''}`}
                   >
@@ -323,7 +323,7 @@ export default function ResidentApprovalPage() {
                     </div>
 
                     {/* Core info */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[140px] sm:min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-[#022b3a] truncate">{resident.fullName}</p>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_BADGE[resident.registrationStatus] ?? ''}`}>
@@ -346,7 +346,8 @@ export default function ResidentApprovalPage() {
 
                     {/* Action buttons — only shown for PENDING */}
                     {isPending && (
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-2 order-last sm:order-none basis-full sm:basis-auto justify-end sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-[#bfdbf7]/50"
+                        onClick={e => e.stopPropagation()}>
                         <button onClick={e => handleApprove(resident, e)} disabled={isActing}
                           className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] disabled:opacity-50 transition-all whitespace-nowrap">
                           {isActing
@@ -394,13 +395,13 @@ export default function ResidentApprovalPage() {
 
                       {/* Action buttons in expanded panel too */}
                       {isPending && (
-                        <div className="mt-4 flex gap-3">
+                        <div className="mt-4 flex flex-wrap gap-3">
                           <button onClick={e => handleApprove(resident, e)} disabled={isActing}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] transition-all">
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-[#e1e5f2] text-green-400 hover:bg-green-950/40 border border-[#bfdbf7] transition-all whitespace-nowrap">
                             <CheckCircle size={14} /> Approve Resident
                           </button>
                           <button onClick={e => openRejectModal(resident, e)} disabled={isActing}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] transition-all">
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-[#e1e5f2] text-red-400 hover:bg-red-950/40 border border-[#bfdbf7] transition-all whitespace-nowrap">
                             <XCircle size={14} /> Reject with Reason
                           </button>
                         </div>

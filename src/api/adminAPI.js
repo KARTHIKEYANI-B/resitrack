@@ -46,6 +46,19 @@ export const adminAPI = {
   updateBatchStatus:      (id, status) => axiosInstance.put(`/admin/maintenance/batches/${id}/status`, { status }),
   deleteMaintenanceBatch: (id)         => axiosInstance.delete(`/admin/maintenance/batches/${id}`),
 
+  // ── Maintenance Batch — per-batch payment ledger (Paid List, verify) ───
+  // Fully separate from the regular monthly Payment Verification screens;
+  // paidCount/unpaidCount returned by getMaintenanceBatches above now come
+  // straight from this same ledger, scoped strictly to each batch.
+  getBatchPaymentsForBatch: (batchId)        => axiosInstance.get(`/admin/maintenance/batch-payments/batch/${batchId}`),
+  getBatchPaidList:         (batchId)        => axiosInstance.get(`/admin/maintenance/batch-payments/batch/${batchId}/paid-list`),
+  getBatchPendingVerification: ()            => axiosInstance.get('/admin/maintenance/batch-payments/pending-verification'),
+  verifyBatchPayment:       (batchPaymentId) => axiosInstance.put(`/admin/maintenance/batch-payments/${batchPaymentId}/verify`),
+  rejectBatchPayment:       (batchPaymentId, reason) =>
+    axiosInstance.put(`/admin/maintenance/batch-payments/${batchPaymentId}/reject`, { reason }),
+  markBatchPaymentPaid:     (batchPaymentId, paymentMethod) =>
+    axiosInstance.put(`/admin/maintenance/batch-payments/${batchPaymentId}/mark-paid`, { paymentMethod }),
+
   getAllPayments:           (params)     => axiosInstance.get('/admin/payments', { params }),
   createAdminPayment:      (data)       => axiosInstance.post('/admin/payments', data),
   getPaymentTrackingStats: ()           => axiosInstance.get('/admin/payments/tracking-stats'),

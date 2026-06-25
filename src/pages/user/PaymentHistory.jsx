@@ -47,7 +47,7 @@ export default function PaymentHistory() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: 'Total Amount Paid',     value: formatCurrency(totalPaid) },
           { label: 'Total Payment Records', value: payments.length },
@@ -82,8 +82,9 @@ export default function PaymentHistory() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full rt-table-animate">
+            {/* Desktop / tablet table */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full min-w-[760px] rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
                     {/*
@@ -91,7 +92,7 @@ export default function PaymentHistory() {
                       Remaining columns: Payment Date, Amount, Late Fee, Method, Transaction ID, Status
                     */}
                     {['Payment Date', 'Amount Paid', 'Late Fee', 'Payment Method', 'Transaction / Reference ID', 'Payment Status'].map(h => (
-                      <th key={h} className="table-header">{h}</th>
+                      <th key={h} className="table-header whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -99,20 +100,53 @@ export default function PaymentHistory() {
                   {paginated.map((p) => (
                     <tr key={p.id} className="table-row">
                       {/* Month column removed */}
-                      <td className="table-cell">{formatDate(p.paymentDate)}</td>
-                      <td className="table-cell font-mono text-[#022b3a]">{formatCurrency(p.amount)}</td>
-                      <td className="table-cell font-mono text-xs">
+                      <td className="table-cell whitespace-nowrap">{formatDate(p.paymentDate)}</td>
+                      <td className="table-cell font-mono text-[#022b3a] whitespace-nowrap">{formatCurrency(p.amount)}</td>
+                      <td className="table-cell font-mono text-xs whitespace-nowrap">
                         {p.lateFee > 0
                           ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span>
                           : <span className="text-[#022b3a]">—</span>}
                       </td>
-                      <td className="table-cell">{p.paymentMethod}</td>
+                      <td className="table-cell whitespace-nowrap">{p.paymentMethod}</td>
                       <td className="table-cell font-mono text-xs text-[#1f7a8c]">{p.transactionId}</td>
                       <td className="table-cell"><Badge status={p.status} /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile: stacked cards */}
+            <div className="md:hidden divide-y divide-[#bfdbf7]">
+              {paginated.map((p) => (
+                <div key={p.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-[#022b3a]">{formatDate(p.paymentDate)}</p>
+                      <p className="font-mono text-[10px] text-[#1f7a8c] break-all mt-0.5">{p.transactionId}</p>
+                    </div>
+                    <Badge status={p.status} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-[#1f7a8c]">Amount</p>
+                      <p className="font-mono font-semibold text-[#022b3a]">{formatCurrency(p.amount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#1f7a8c]">Late Fee</p>
+                      <p className="font-mono">
+                        {p.lateFee > 0
+                          ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span>
+                          : <span className="text-[#022b3a]">—</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[#1f7a8c]">Method</p>
+                      <p className="text-[#022b3a]">{p.paymentMethod}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>

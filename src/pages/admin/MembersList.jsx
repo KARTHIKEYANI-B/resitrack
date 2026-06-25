@@ -626,77 +626,139 @@ function AdminAccountsPanel() {
             style={{ borderColor: P.primary, borderTopColor: 'transparent' }} />
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden"
-          style={{ border: `1px solid ${P.border}` }}>
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: P.primary }}>
-                {['Name', 'Email', 'Position', 'Role', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((acc, i) => (
-                <tr key={acc.id}
-                  className="border-t"
-                  style={{ borderColor: P.border, background: i % 2 === 0 ? P.surface : '#fff' }}>
-                  <td className="px-4 py-3 text-sm font-medium" style={{ color: P.dark }}>
-                    {acc.name}
-                    {acc.superAdmin && (
-                      <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{ background: P.primary + '20', color: P.primary }}>
-                        SUPER ADMIN
-                      </span>
-                    )}
-                    {acc.forcePasswordChange && (
-                      <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{ background: '#fef3c7', color: '#d97706' }}>
-                        MUST CHANGE PWD
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-mono" style={{ color: P.muted }}>
-                    {acc.email}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: P.body }}>
-                    {acc.position
-                      ? acc.position.replace(/_/g, ' ')
-                      : <span style={{ color: P.muted }}>—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    <span className="px-2 py-0.5 rounded-full font-semibold"
-                      style={{
-                        background: acc.superAdmin ? P.primary + '15' : P.accent,
-                        color: acc.superAdmin ? P.primary : P.body,
-                      }}>
-                      {acc.superAdmin ? 'Super Admin' : 'Admin'}
+        <>
+          {/* Desktop / tablet: table view (hidden on mobile) */}
+          <div className="rounded-2xl overflow-hidden hidden md:block"
+            style={{ border: `1px solid ${P.border}` }}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px]">
+                <thead>
+                  <tr style={{ background: P.primary }}>
+                    {['Name', 'Email', 'Position', 'Role', 'Actions'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {accounts.map((acc, i) => (
+                    <tr key={acc.id}
+                      className="border-t"
+                      style={{ borderColor: P.border, background: i % 2 === 0 ? P.surface : '#fff' }}>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: P.dark }}>
+                        {acc.name}
+                        {acc.superAdmin && (
+                          <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            SUPER ADMIN
+                          </span>
+                        )}
+                        {acc.forcePasswordChange && (
+                          <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                            style={{ background: '#fef3c7', color: '#d97706' }}>
+                            MUST CHANGE PWD
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono" style={{ color: P.muted }}>
+                        {acc.email}
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: P.body }}>
+                        {acc.position
+                          ? acc.position.replace(/_/g, ' ')
+                          : <span style={{ color: P.muted }}>—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <span className="px-2 py-0.5 rounded-full font-semibold whitespace-nowrap"
+                          style={{
+                            background: acc.superAdmin ? P.primary + '15' : P.accent,
+                            color: acc.superAdmin ? P.primary : P.body,
+                          }}>
+                          {acc.superAdmin ? 'Super Admin' : 'Admin'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
+                            style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
+                            <Key size={11} /> Reset Password
+                          </button>
+                          {/* Delete only shown for non-superAdmin accounts to prevent accidental self-lockout */}
+                          {!acc.superAdmin && (
+                            <button
+                              onClick={() => setDeleteTarget(acc)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
+                              style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                              <Trash2 size={11} /> Delete
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile: stacked card view */}
+          <div className="space-y-3 md:hidden">
+            {accounts.map(acc => (
+              <div key={acc.id} className="rounded-2xl p-4"
+                style={{ border: `1px solid ${P.border}`, background: P.surface }}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="text-sm font-bold break-words" style={{ color: P.dark }}>{acc.name}</p>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0"
+                    style={{
+                      background: acc.superAdmin ? P.primary + '15' : P.accent,
+                      color: acc.superAdmin ? P.primary : P.body,
+                    }}>
+                    {acc.superAdmin ? 'Super Admin' : 'Admin'}
+                  </span>
+                </div>
+                <p className="text-xs font-mono break-all mb-1" style={{ color: P.muted }}>{acc.email}</p>
+                <p className="text-xs mb-2" style={{ color: P.body }}>
+                  {acc.position ? acc.position.replace(/_/g, ' ') : <span style={{ color: P.muted }}>No position</span>}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {acc.superAdmin && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: P.primary + '20', color: P.primary }}>
+                      SUPER ADMIN
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
-                        <Key size={11} /> Reset Password
-                      </button>
-                      {/* Delete only shown for non-superAdmin accounts to prevent accidental self-lockout */}
-                      {!acc.superAdmin && (
-                        <button
-                          onClick={() => setDeleteTarget(acc)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
-                          <Trash2 size={11} /> Delete
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                  {acc.forcePasswordChange && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: '#fef3c7', color: '#d97706' }}>
+                      MUST CHANGE PWD
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t" style={{ borderColor: P.border }}>
+                  <button
+                    onClick={() => { setResetTarget(acc); setNewPassword(''); setShowPw(false) }}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                    style={{ background: P.accent, color: P.primary, border: `1px solid ${P.border}` }}>
+                    <Key size={11} /> Reset Password
+                  </button>
+                  {!acc.superAdmin && (
+                    <button
+                      onClick={() => setDeleteTarget(acc)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                      <Trash2 size={11} /> Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {accounts.length === 0 && (
+              <div className="text-center py-12" style={{ color: P.muted }}>
+                <p className="text-sm">No admin accounts found</p>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Reset Password Modal */}

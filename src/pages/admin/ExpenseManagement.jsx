@@ -310,12 +310,13 @@ export default function ExpenseManagement() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full rt-table-animate">
+            {/* Desktop / tablet table */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full min-w-[860px] rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
                     {['Expense Name', 'Category', 'Date', 'Amount', 'Method', 'Vendor Status', 'Receipt', 'Actions'].map(h => (
-                      <th key={h} className="table-header">{h}</th>
+                      <th key={h} className="table-header whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -324,17 +325,17 @@ export default function ExpenseManagement() {
                     <tr key={e.id} className="table-row">
                       <td className="table-cell font-medium text-[#022b3a]">{e.expenseName}</td>
                       <td className="table-cell">
-                        <span className="text-xs px-2 py-0.5 rounded-md bg-[#e1e5f2] border border-[#bfdbf7] text-[#022b3a]/60">
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-[#e1e5f2] border border-[#bfdbf7] text-[#022b3a]/60 whitespace-nowrap">
                           {e.category}
                         </span>
                       </td>
-                      <td className="table-cell">{formatDate(e.expenseDate)}</td>
-                      <td className="table-cell font-mono text-[#022b3a]">{formatCurrency(e.amount ?? 0)}</td>
-                      <td className="table-cell">{e.paymentMethod ?? '—'}</td>
+                      <td className="table-cell whitespace-nowrap">{formatDate(e.expenseDate)}</td>
+                      <td className="table-cell font-mono text-[#022b3a] whitespace-nowrap">{formatCurrency(e.amount ?? 0)}</td>
+                      <td className="table-cell whitespace-nowrap">{e.paymentMethod ?? '—'}</td>
                       <td className="table-cell"><Badge status={e.vendorStatus} /></td>
                       <td className="table-cell">
                         {e.receiptFileName
-                          ? <button className="flex items-center gap-1 text-xs text-[#022b3a]/60 hover:text-[#022b3a] transition-colors">
+                          ? <button className="flex items-center gap-1 text-xs text-[#022b3a]/60 hover:text-[#022b3a] transition-colors whitespace-nowrap">
                               <Eye size={12} /> View
                             </button>
                           : <span className="text-xs text-[#022b3a]">—</span>}
@@ -355,6 +356,45 @@ export default function ExpenseManagement() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile: stacked cards */}
+            <div className="md:hidden divide-y divide-[#bfdbf7]">
+              {paginated.map((e) => (
+                <div key={e.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-sm font-semibold text-[#022b3a] break-words">{e.expenseName}</p>
+                    <span className="font-mono text-sm flex-shrink-0">{formatCurrency(e.amount ?? 0)}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-xs px-2 py-0.5 rounded-md bg-[#e1e5f2] border border-[#bfdbf7] text-[#022b3a]/60">
+                      {e.category}
+                    </span>
+                    <Badge status={e.vendorStatus} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#1f7a8c] mb-3">
+                    <span>{formatDate(e.expenseDate)}</span>
+                    <span>{e.paymentMethod ?? '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-[#bfdbf7]">
+                    {e.receiptFileName
+                      ? <button className="flex items-center gap-1 text-xs text-[#022b3a]/60 hover:text-[#022b3a] transition-colors">
+                          <Eye size={12} /> View Receipt
+                        </button>
+                      : <span className="text-xs text-[#022b3a]/40">No receipt</span>}
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(e)}
+                        className="p-1.5 rounded-lg text-[#1f7a8c] hover:text-[#022b3a] hover:bg-[#bfdbf7] transition-all">
+                        <Edit2 size={13} />
+                      </button>
+                      <button onClick={() => handleDelete(e.id)}
+                        className="p-1.5 rounded-lg text-[#1f7a8c] hover:text-red-400 hover:bg-red-950/30 transition-all">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>

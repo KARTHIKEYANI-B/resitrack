@@ -53,12 +53,12 @@ export default function UserPendingDues() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title text-xl">My Outstanding Dues</h1>
           <p className="section-subtitle">Your outstanding maintenance dues and unpaid balances</p>
         </div>
-        <button onClick={fetchDues} className="btn-secondary flex items-center gap-2">
+        <button onClick={fetchDues} className="btn-secondary flex items-center justify-center gap-2 self-start sm:self-auto">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>

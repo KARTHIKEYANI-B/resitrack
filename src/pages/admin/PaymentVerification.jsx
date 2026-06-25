@@ -42,6 +42,7 @@ function StatusBadge({ status }) {
 function MethodBadge({ method }) {
   const map = {
     GPAY:          { label: 'GPay / UPI',    color: 'text-blue-400  bg-blue-950/30  border-blue-800/50' },
+    UPI:           { label: 'UPI',           color: 'text-blue-400  bg-blue-950/30  border-blue-800/50' },
     CASH:          { label: 'Cash',          color: 'text-green-400 bg-green-950/30 border-green-800/50' },
     BANK_TRANSFER: { label: 'Bank Transfer', color: 'text-purple-400 bg-purple-950/30 border-purple-800/50' },
   }
@@ -49,6 +50,23 @@ function MethodBadge({ method }) {
   return (
     <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border font-medium ${c.color}`}>
       {c.label}
+    </span>
+  )
+}
+
+/* Distinguishes Maintenance Batch payments (separate table/workflow) from
+   regular Monthly Maintenance verification requests, at a glance. */
+function SourceBadge({ source }) {
+  if (source === 'BATCH') {
+    return (
+      <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border font-medium text-amber-600 bg-amber-50 border-amber-200">
+        Maintenance Batch
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border font-medium text-sky-600 bg-sky-50 border-sky-200">
+      Monthly Maintenance
     </span>
   )
 }
@@ -76,8 +94,9 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
   return (
     <Modal isOpen={open} onClose={onClose} title="Payment Verification Details" size="lg">
       <div className="space-y-4">
-        {/* Payment method badge */}
-        <div className="flex items-center gap-2">
+        {/* Source + payment method badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <SourceBadge source={request.source} />
           <MethodBadge method={method} />
           {isCash && request.paidToAdminName && (
             <span className="text-xs text-[#1f7a8c]">Paid to: <strong className="text-[#022b3a]">{request.paidToAdminName}</strong></span>
@@ -93,8 +112,9 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
             { label: 'Submitted By Resident',     value: request.submittedByLabel || request.submittedName },
             { label: 'Property Owner Name',     value: request.ownerName || '—' },
             { label: 'Flat / Villa Number',       value: request.flatNumber },
-            { label: 'Phone',            value: request.phoneNumber },
-            { label: 'Billing Month / Period',    value: request.paymentMonth },
+            ...(request.source !== 'BATCH' ? [{ label: 'Phone', value: request.phoneNumber }] : []),
+            { label: request.source === 'BATCH' ? 'Batch Name' : 'Billing Month / Period',
+              value: request.paymentMonth },
             ...(!isCash ? [{ label: 'Transaction / Reference ID', value: request.transactionId, mono: true }] : []),
             ...(isCash  ? [{ label: 'Cash Received By', value: request.paidToAdminName || '—' }] : []),
             { label: 'Submitted On',        value: formatDate(request.createdAt) },
@@ -214,10 +234,47 @@ export default function PaymentVerification() {
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
-      const res  = await adminAPI.getPaymentVerificationRequests(
+      // ── Monthly maintenance verification requests (unchanged source) ────
+      const monthlyRes  = await adminAPI.getPaymentVerificationRequests(
         statusFilter ? { status: statusFilter } : {})
-      const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-      setRequests(data)
+      const monthlyData = Array.isArray(monthlyRes.data) ? monthlyRes.data : (monthlyRes.data?.data ?? [])
+      const monthly = monthlyData.map(r => ({ ...r, source: 'MONTHLY' }))
+
+      // ── Maintenance Batch payments awaiting verification ─────────────────
+      // Separate table/endpoint entirely (batch_payments, never the monthly
+      // payments/payment_verification_requests tables). Only fetched here
+      // for PENDING status or no filter — VERIFIED/REJECTED batch payments
+      // already live in the Maintenance Batch page's own Paid List, so we
+      // don't duplicate them into this screen's history view.
+      let batch = []
+      if (!statusFilter || statusFilter === 'PENDING') {
+        try {
+          const batchRes  = await adminAPI.getBatchPendingVerification()
+          const batchData = Array.isArray(batchRes.data?.data) ? batchRes.data.data
+            : Array.isArray(batchRes.data) ? batchRes.data : []
+          batch = batchData.map(b => ({
+            id:               `batch-${b.batchPaymentId}`,
+            rawId:            b.batchPaymentId,
+            source:           'BATCH',
+            submittedName:    b.familyMemberName || b.ownerName,
+            submittedByLabel: b.familyMemberName
+              ? `${b.familyMemberName} (Family Member)`
+              : `${b.ownerName} (Owner)`,
+            ownerName:        b.ownerName,
+            flatNumber:       b.flatNumber,
+            paymentAmount:    b.amount,
+            transactionId:    b.transactionId,
+            paymentMethod:    b.paymentMethod,
+            paymentMonth:     b.batchTitle,     // batch name shown where "month" appears
+            batchTitle:       b.batchTitle,
+            batchId:          b.batchId,
+            status:           'PENDING',
+            createdAt:        b.submittedDate,
+          }))
+        } catch { /* batch feed is additive — never blocks the monthly list */ }
+      }
+
+      setRequests([...batch, ...monthly])
     } catch {
       toast.error('Could not load payment verification requests')
     } finally { setLoading(false); setRefreshing(false) }
@@ -226,10 +283,16 @@ export default function PaymentVerification() {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   const handleVerify = async (id) => {
+    const target = requests.find(r => r.id === id)
     setActionId(id)
     try {
-      await adminAPI.verifyPaymentRequest(id)
-      toast.success('Payment verified! Record created and resident notified.')
+      if (target?.source === 'BATCH') {
+        await adminAPI.verifyBatchPayment(target.rawId)
+        toast.success('Batch payment verified! Paid count updated.')
+      } else {
+        await adminAPI.verifyPaymentRequest(id)
+        toast.success('Payment verified! Record created and resident notified.')
+      }
       setViewRequest(null)
       fetchAll(true)
     } catch (err) {
@@ -238,10 +301,16 @@ export default function PaymentVerification() {
   }
 
   const handleReject = async (id, reason) => {
+    const target = requests.find(r => r.id === id)
     setActionId(id)
     try {
-      await adminAPI.rejectPaymentRequest(id, reason)
-      toast.success('Request rejected. Resident notified.')
+      if (target?.source === 'BATCH') {
+        await adminAPI.rejectBatchPayment(target.rawId, reason)
+        toast.success('Batch payment rejected.')
+      } else {
+        await adminAPI.rejectPaymentRequest(id, reason)
+        toast.success('Request rejected. Resident notified.')
+      }
       setViewRequest(null)
       fetchAll(true)
     } catch (err) {
@@ -256,7 +325,8 @@ export default function PaymentVerification() {
     (r.flatNumber       ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (r.transactionId    ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (r.paymentMethod    ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (r.paidToAdminName  ?? '').toLowerCase().includes(search.toLowerCase())
+    (r.paidToAdminName  ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (r.batchTitle        ?? '').toLowerCase().includes(search.toLowerCase())
   )
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
@@ -336,7 +406,7 @@ export default function PaymentVerification() {
               <table className="w-full">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Submitted By', 'Owner Detail', 'Flat', 'Phone', 'Amount', 'Method', 'Ref / Admin', 'Month', 'Screenshot', 'Status', 'Actions'].map(h => (
+                    {['Type', 'Submitted By', 'Owner Detail', 'Flat', 'Phone', 'Amount', 'Method', 'Ref / Admin', 'Month / Batch', 'Screenshot', 'Status', 'Actions'].map(h => (
                       <th key={h} className="table-header text-xs">{h}</th>
                     ))}
                   </tr>
@@ -344,6 +414,7 @@ export default function PaymentVerification() {
                 <tbody>
                   {paginated.map(r => (
                     <tr key={r.id} className="table-row">
+                      <td className="table-cell"><SourceBadge source={r.source} /></td>
                       <td className="table-cell font-medium text-sm text-[#022b3a]">
                         {r.submittedByLabel || r.submittedName}
                       </td>
@@ -351,7 +422,7 @@ export default function PaymentVerification() {
                         {r.ownerName || '—'}
                       </td>
                       <td className="table-cell font-mono text-xs">{r.flatNumber}</td>
-                      <td className="table-cell text-xs">{r.phoneNumber}</td>
+                      <td className="table-cell text-xs">{r.phoneNumber || '—'}</td>
                       <td className="table-cell font-mono text-sm text-[#022b3a] font-semibold">{fmt(r.paymentAmount)}</td>
                       <td className="table-cell"><MethodBadge method={r.paymentMethod || 'GPAY'} /></td>
                       <td className="table-cell font-mono text-xs text-[#1f7a8c]">
@@ -401,6 +472,7 @@ export default function PaymentVerification() {
                 <div key={r.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
+                      <div className="mb-1"><SourceBadge source={r.source} /></div>
                       <p className="font-semibold text-sm text-[#022b3a]">
                         {r.submittedByLabel || r.submittedName}
                       </p>
@@ -413,8 +485,8 @@ export default function PaymentVerification() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><p className="text-[#1f7a8c]">Amount</p><p className="font-mono font-semibold">{fmt(r.paymentAmount)}</p></div>
-                    <div><p className="text-[#1f7a8c]">Month</p><p>{r.paymentMonth}</p></div>
-                    <div className="col-span-2"><p className="text-[#1f7a8c]">TXN ID</p><p className="font-mono">{r.transactionId}</p></div>
+                    <div><p className="text-[#1f7a8c]">{r.source === 'BATCH' ? 'Batch' : 'Month'}</p><p>{r.paymentMonth}</p></div>
+                    <div className="col-span-2"><p className="text-[#1f7a8c]">TXN ID</p><p className="font-mono">{r.transactionId || '—'}</p></div>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setViewRequest(r)}

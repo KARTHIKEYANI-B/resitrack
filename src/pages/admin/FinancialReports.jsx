@@ -362,35 +362,59 @@ export default function FinancialReports() {
             <h2 className="text-sm font-semibold text-[#022b3a]">Expense Details by Category</h2>
             <span className="text-xs text-[#1f7a8c]">{periodLabel}</span>
           </div>
-          <table className="w-full">
-            <thead className="border-b border-[#bfdbf7] bg-white/50">
-              <tr>
-                {['Category', 'Amount', 'Share %', 'Bar'].map(h => (
-                  <th key={h} className="table-header">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((e, i) => (
-                <tr key={i} className="table-row">
-                  <td className="table-cell font-medium text-[#022b3a]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      {e.category}
-                    </div>
-                  </td>
-                  <td className="table-cell font-mono">{fmt(e.amount)}</td>
-                  <td className="table-cell text-[#022b3a]/60">{e.percentage}%</td>
-                  <td className="table-cell w-40">
-                    <div className="w-full bg-[#e1e5f2] rounded-full h-1.5 overflow-hidden">
-                      <div className="h-full bg-[#bfdbf7] rounded-full"
-                        style={{ width: `${e.percentage}%` }} />
-                    </div>
-                  </td>
+          {/* Desktop / tablet table */}
+          <div className="overflow-x-auto hidden sm:block">
+            <table className="w-full min-w-[480px]">
+              <thead className="border-b border-[#bfdbf7] bg-white/50">
+                <tr>
+                  {['Category', 'Amount', 'Share %', 'Bar'].map(h => (
+                    <th key={h} className="table-header whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {expenses.map((e, i) => (
+                  <tr key={i} className="table-row">
+                    <td className="table-cell font-medium text-[#022b3a]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        {e.category}
+                      </div>
+                    </td>
+                    <td className="table-cell font-mono whitespace-nowrap">{fmt(e.amount)}</td>
+                    <td className="table-cell text-[#022b3a]/60 whitespace-nowrap">{e.percentage}%</td>
+                    <td className="table-cell w-40">
+                      <div className="w-full bg-[#e1e5f2] rounded-full h-1.5 overflow-hidden">
+                        <div className="h-full bg-[#bfdbf7] rounded-full"
+                          style={{ width: `${e.percentage}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: stacked rows */}
+          <div className="sm:hidden divide-y divide-[#bfdbf7]">
+            {expenses.map((e, i) => (
+              <div key={i} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-sm font-medium text-[#022b3a] truncate">{e.category}</span>
+                  </div>
+                  <span className="text-sm font-mono flex-shrink-0">{fmt(e.amount)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-[#e1e5f2] rounded-full h-1.5 overflow-hidden">
+                    <div className="h-full bg-[#bfdbf7] rounded-full" style={{ width: `${e.percentage}%` }} />
+                  </div>
+                  <span className="text-xs text-[#022b3a]/60 flex-shrink-0">{e.percentage}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

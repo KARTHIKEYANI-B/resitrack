@@ -8,6 +8,14 @@ export const userAPI = {
   getPaymentHistory:          (params) => axiosInstance.get('/user/payments/history', { params }),
   getPendingDues:             ()       => axiosInstance.get('/user/pending-dues'),
 
+  // ── Maintenance Batch Dues (separate from regular monthly maintenance) ──
+  // Shows ad-hoc batches (e.g. "Pongal Celebration") billed to this resident's
+  // property, with their own paid/unpaid status — independent of the
+  // monthly maintenance ledger above.
+  getMaintenanceBatchDues:    ()       => axiosInstance.get('/user/maintenance-batch-dues'),
+  payMaintenanceBatchDue:     (batchPaymentId, data) =>
+    axiosInstance.post(`/user/maintenance-batch-dues/${batchPaymentId}/pay`, data),
+
   // ── Payment Verification — screenshot-based workflow ─────────────────
   // GPAY: existing (unchanged)
   submitPaymentVerificationRequest: (data) => {

@@ -21,14 +21,14 @@ export default function Pagination({ page, totalPages, onPageChange }) {
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-3 animate-fade-in"
+      className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 animate-fade-in"
       style={{ borderTop: `1px solid ${P.border}` }}
     >
-      <p className="text-xs" style={{ color: P.muted }}>
+      <p className="text-xs order-2 sm:order-1" style={{ color: P.muted }}>
         Page <span style={{ color: P.primary, fontWeight: 600 }}>{page}</span> of {totalPages}
       </p>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center order-1 sm:order-2">
         {/* Prev */}
         <button
           onClick={() => onPageChange(page - 1)}

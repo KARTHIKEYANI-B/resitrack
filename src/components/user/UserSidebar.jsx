@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Wrench, CreditCard, Clock,
   FileText, Bell, Settings, LogOut, Home,
-  BookOpen, X, Users, ShieldCheck, Shield
+  BookOpen, X, Users, ShieldCheck, Shield, ListChecks
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -23,6 +23,7 @@ const COMMON_NAV = [
 ]
 const PROPERTY_NAV = [
   { to: '/user/maintenance',     icon: Wrench,      label: 'Maintenance' },
+  { to: '/user/maintenance-batch-dues', icon: ListChecks, label: 'Maintenance Batch Dues' },
   { to: '/user/payment-history', icon: CreditCard,  label: 'Payment History' },
   { to: '/user/pending-dues',    icon: Clock,       label: 'Outstanding Dues' },
   { to: '/user/receipts',        icon: FileText,    label: 'Receipts' },

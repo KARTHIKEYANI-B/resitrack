@@ -99,10 +99,10 @@ export default function AdminSettings() {
       </div>
 
       {/* Tab Navigation — General tab REMOVED */}
-      <div className="flex gap-1 bg-white border border-[#bfdbf7] rounded-xl p-1.5">
+      <div className="flex flex-wrap gap-1 bg-white border border-[#bfdbf7] rounded-xl p-1.5">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all flex-1 justify-center ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all flex-1 justify-center whitespace-nowrap min-w-[110px] ${
               activeTab === key ? 'bg-white text-[#022b3a]' : 'text-[#022b3a]/60 hover:text-[#022b3a] hover:bg-[#e1e5f2]'
             }`}>
             <Icon size={13} />{label}
@@ -114,7 +114,7 @@ export default function AdminSettings() {
       {activeTab === 'fees' && (
         <div className="card space-y-5">
           <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Fees & Penalty Rules Configuration</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FieldGroup label="Penalty Percentage (%)">
               <Input value={fees.penaltyPercentage} placeholder="e.g. 5"
                 onChange={e => setFees({ ...fees, penaltyPercentage: e.target.value })} />
@@ -136,8 +136,8 @@ export default function AdminSettings() {
       {activeTab === 'apartment' && (
         <div className="card space-y-5">
           <h2 className="text-sm font-semibold text-[#022b3a] border-b border-[#bfdbf7] pb-3">Association & Apartment Details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <FieldGroup label="Association Name">
                 <Input value={apartment.apartmentName} placeholder="Apartment association name"
                   onChange={e => setApartment({ ...apartment, apartmentName: e.target.value })} />
@@ -151,7 +151,7 @@ export default function AdminSettings() {
               <Input value={apartment.contactEmail} placeholder="admin@apartment.com" type="email"
                 onChange={e => setApartment({ ...apartment, contactEmail: e.target.value })} />
             </FieldGroup>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <FieldGroup label="Full Address">
                 <textarea value={apartment.address} rows={2}
                   onChange={e => setApartment({ ...apartment, address: e.target.value })}

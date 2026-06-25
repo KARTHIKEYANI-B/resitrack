@@ -231,12 +231,12 @@ export default function Receipts() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title text-xl">Receipts</h1>
           {/* <p className="section-subtitle">Payment receipts for all verified and approved transactions</p> */}
         </div>
-        <button onClick={load} className="btn-secondary flex items-center gap-2">
+        <button onClick={load} className="btn-secondary flex items-center justify-center gap-2 self-start sm:self-auto">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
@@ -247,14 +247,14 @@ export default function Receipts() {
             All Receipts
             {receipts.length > 0 && <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({receipts.length})</span>}
           </h2>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             <FilterSelect value={yearFilter} onChange={v => { setYear(v); setPage(1) }}
               options={YEAR_OPTIONS} placeholder="All Years" />
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-initial min-w-[160px] sm:min-w-0">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1f7a8c]" />
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
                 placeholder="Name, flat, receipt no…"
-                className="input-field pl-8 w-52 text-xs" />
+                className="input-field pl-8 w-full sm:w-52 text-xs" />
             </div>
           </div>
         </div>
@@ -321,7 +321,7 @@ export default function Receipts() {
                       <p className="font-semibold text-sm text-[#022b3a]">{r.residentName}</p>
                       <p className="text-xs font-mono text-[#1f7a8c]">{r.flatNumber} · {r.flatType}</p>
                     </div>
-                    <span className="flex items-center gap-1 text-[10px] text-green-500 bg-green-950/30 border border-green-900/40 px-2 py-0.5 rounded-full">
+                    <span className="flex items-center gap-1 text-[10px] text-green-500 bg-green-950/30 border border-green-900/40 px-2 py-0.5 rounded-full flex-shrink-0">
                       <CheckCircle size={9} /> Paid
                     </span>
                   </div>
@@ -355,12 +355,12 @@ export default function Receipts() {
         {selected && (
           <>
             <ReceiptLayout receipt={selected} />
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => setSelected(null)} className="btn-secondary flex-1">Close</button>
-              <button onClick={handlePrint} className="btn-secondary flex items-center gap-2">
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button onClick={() => setSelected(null)} className="btn-secondary flex-1 min-w-[90px]">Close</button>
+              <button onClick={handlePrint} className="btn-secondary flex items-center justify-center gap-2 flex-1 min-w-[90px]">
                 <Printer size={13} /> Print
               </button>
-              <button onClick={() => handleDownload(selected.id)} className="btn-primary flex items-center gap-2">
+              <button onClick={() => handleDownload(selected.id)} className="btn-primary flex items-center justify-center gap-2 flex-1 min-w-[90px]">
                 <Download size={13} /> PDF
               </button>
             </div>

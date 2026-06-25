@@ -503,11 +503,11 @@ export default function ResidentList() {
                     </button>
                   ))}
                 </div>
-                <div className="relative">
+                <div className="relative w-full sm:w-56">
                   <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: P.muted }} />
                   <input type="text" placeholder="Search name, flat, phone…" value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 rounded-xl text-xs border outline-none w-56"
+                    className="pl-8 pr-3 py-1.5 rounded-xl text-xs border outline-none w-full"
                     style={{ borderColor: P.border, color: P.dark }} />
                 </div>
               </div>
@@ -519,60 +519,110 @@ export default function ResidentList() {
                 description={search ? `No residents match "${search}"` : typeFilter !== 'ALL' ? `No approved ${typeFilter.toLowerCase()} owners found.` : 'Approved active owners appear here.'}
               />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full rt-table-animate">
-                  <thead className="border-b" style={{ borderColor: P.border }}>
-                    <tr>
-                      {['Name', 'Email', 'Phone', 'Flat No.', 'Type', 'Sq.Ft', 'Family', 'Joined', 'Actions'].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold px-4 py-3" style={{ color: P.muted }}>{h}</th>
+              <>
+                {/* Desktop / tablet table */}
+                <div className="overflow-x-auto hidden md:block">
+                  <table className="w-full min-w-[760px] rt-table-animate">
+                    <thead className="border-b" style={{ borderColor: P.border }}>
+                      <tr>
+                        {['Name', 'Email', 'Phone', 'Flat No.', 'Type', 'Sq.Ft', 'Family', 'Joined', 'Actions'].map(h => (
+                          <th key={h} className="text-left text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: P.muted }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map(r => (
+                        <>
+                          <tr key={r.id} className="border-b transition-colors hover:bg-gray-50/50" style={{ borderColor: P.border }}>
+                            
+                            
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <ResidentAvatar name={r.fullName} photoUrl={r.profilePhotoUrl} size={36} />
+                                <span className="text-sm font-medium truncate" style={{ color: P.dark }}>{r.fullName}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-xs" style={{ color: P.muted }}>{r.email || '—'}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: P.body }}>{r.phone || '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-xs px-2 py-0.5 rounded whitespace-nowrap" style={{ background: P.accent, color: P.dark }}>{r.flatNumber}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${r.propertyType === 'VILLA' ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+                                {r.propertyType === 'VILLA' ? 'Villa' : 'Flat'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-mono" style={{ color: P.body }}>{r.squareFeet || '—'}</td>
+                            <td className="px-4 py-3 text-xs text-center" style={{ color: P.body }}>{r.familyMembers ?? '—'}</td>
+                            <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: P.muted }}>{r.createdAt ? formatDate(r.createdAt) : '—'}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => setExpandedId(expandedId === r.id ? null : r.id)} title="Family members"
+                                  className="p-1.5 rounded-lg transition-colors"
+                                  style={{ color: expandedId === r.id ? P.primary : P.muted, background: expandedId === r.id ? P.accent : 'transparent' }}>
+                                  {expandedId === r.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                </button>
+                                <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg transition-colors" style={{ color: P.muted }} title="Edit"><Edit2 size={13} /></button>
+                                <button onClick={() => openDeleteModal(r)} className="p-1.5 rounded-lg transition-colors hover:text-red-500" style={{ color: P.muted }} title="Delete"><Trash2 size={13} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                          {expandedId === r.id && (
+                            <tr key={`fm-${r.id}`}><td colSpan={9} className="p-0"><FamilyMembersPanel residentId={r.id} /></td></tr>
+                          )}
+                        </>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map(r => (
-                      <>
-                        <tr key={r.id} className="border-b transition-colors hover:bg-gray-50/50" style={{ borderColor: P.border }}>
-                          
-                          
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <ResidentAvatar name={r.fullName} photoUrl={r.profilePhotoUrl} size={36} />
-                              <span className="text-sm font-medium truncate" style={{ color: P.dark }}>{r.fullName}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: P.muted }}>{r.email || '—'}</td>
-                          <td className="px-4 py-3 text-xs" style={{ color: P.body }}>{r.phone || '—'}</td>
-                          <td className="px-4 py-3">
-                            <span className="font-mono text-xs px-2 py-0.5 rounded" style={{ background: P.accent, color: P.dark }}>{r.flatNumber}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-0.5 rounded border ${r.propertyType === 'VILLA' ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile: stacked cards */}
+                <div className="md:hidden divide-y" style={{ borderColor: P.border }}>
+                  {filtered.map(r => (
+                    <div key={r.id} style={{ borderColor: P.border }}>
+                      <div className="p-4 flex items-start gap-3">
+                        <ResidentAvatar name={r.fullName} photoUrl={r.profilePhotoUrl} size={44} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-bold break-words" style={{ color: P.dark }}>{r.fullName}</p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded border whitespace-nowrap flex-shrink-0 ${r.propertyType === 'VILLA' ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
                               {r.propertyType === 'VILLA' ? 'Villa' : 'Flat'}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-xs font-mono" style={{ color: P.body }}>{r.squareFeet || '—'}</td>
-                          <td className="px-4 py-3 text-xs text-center" style={{ color: P.body }}>{r.familyMembers ?? '—'}</td>
-                          <td className="px-4 py-3 text-xs" style={{ color: P.muted }}>{r.createdAt ? formatDate(r.createdAt) : '—'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => setExpandedId(expandedId === r.id ? null : r.id)} title="Family members"
-                                className="p-1.5 rounded-lg transition-colors"
-                                style={{ color: expandedId === r.id ? P.primary : P.muted, background: expandedId === r.id ? P.accent : 'transparent' }}>
-                                {expandedId === r.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                              </button>
-                              <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg transition-colors" style={{ color: P.muted }} title="Edit"><Edit2 size={13} /></button>
-                              <button onClick={() => openDeleteModal(r)} className="p-1.5 rounded-lg transition-colors hover:text-red-500" style={{ color: P.muted }} title="Delete"><Trash2 size={13} /></button>
-                            </div>
-                          </td>
-                        </tr>
-                        {expandedId === r.id && (
-                          <tr key={`fm-${r.id}`}><td colSpan={9} className="p-0"><FamilyMembersPanel residentId={r.id} /></td></tr>
-                        )}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                            <span className="font-mono text-[11px] px-2 py-0.5 rounded" style={{ background: P.accent, color: P.dark }}>{r.flatNumber}</span>
+                            {r.squareFeet && <span className="text-[11px]" style={{ color: P.muted }}>{r.squareFeet} sq.ft</span>}
+                            <span className="text-[11px]" style={{ color: P.muted }}>{r.familyMembers ?? 0} family</span>
+                          </div>
+                          <div className="mt-2 space-y-0.5 text-xs" style={{ color: P.body }}>
+                            {r.email && <p className="truncate">{r.email}</p>}
+                            {r.phone && <p>{r.phone}</p>}
+                            <p style={{ color: P.muted }}>Joined {r.createdAt ? formatDate(r.createdAt) : '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-4 pb-3">
+                        <button onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors"
+                          style={{ color: expandedId === r.id ? P.primary : P.muted, background: expandedId === r.id ? P.accent : '#f3f4f6' }}>
+                          {expandedId === r.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Family
+                        </button>
+                        <button onClick={() => openEdit(r)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors"
+                          style={{ color: P.muted, background: '#f3f4f6' }}>
+                          <Edit2 size={13} /> Edit
+                        </button>
+                        <button onClick={() => openDeleteModal(r)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors hover:text-red-500"
+                          style={{ color: P.muted, background: '#f3f4f6' }}>
+                          <Trash2 size={13} /> Delete
+                        </button>
+                      </div>
+                      {expandedId === r.id && <FamilyMembersPanel residentId={r.id} />}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </>

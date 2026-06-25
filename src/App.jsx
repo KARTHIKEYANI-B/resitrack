@@ -32,6 +32,7 @@ import UserLayout          from './pages/user/UserLayout'
 import UserDashboard       from './pages/user/UserDashboard'
 import FamilyMembersPage   from './pages/user/FamilyMembersPage'
 import CurrentMaintenance  from './pages/user/CurrentMaintenance'
+import MaintenanceBatchDues from './pages/user/MaintenanceBatchDues'
 import PaymentHistory      from './pages/user/PaymentHistory'
 import UserPendingDues     from './pages/user/UserPendingDues'
 import UserReceipts        from './pages/user/UserReceipts'
@@ -110,6 +111,7 @@ export default function App() {
             <Route path="members"          element={<UserMembersList />} />
             <Route path="family-members"   element={<FamilyMembersPage />} />
             <Route path="maintenance"      element={<CurrentMaintenance />} />
+            <Route path="maintenance-batch-dues" element={<MaintenanceBatchDues />} />
             <Route path="payment-history"  element={<PaymentHistory />} />
             <Route path="pending-dues"     element={<UserPendingDues />} />
             <Route path="receipts"         element={<UserReceipts />} />

@@ -120,7 +120,7 @@ export default function UserNotifications() {
     <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title text-xl">My Notifications & Complaints</h1>
           <p className="section-subtitle">
@@ -128,31 +128,31 @@ export default function UserNotifications() {
             {openCount > 0 && ` · ${openCount} complaint${openCount > 1 ? 's' : ''} pending`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={fetchAll} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={fetchAll} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2 whitespace-nowrap">
             <RefreshCw size={12} />Refresh
           </button>
-          <button onClick={() => setComplaintOpen(true)} className="btn-primary flex items-center gap-2 text-sm px-4 py-2">
+          <button onClick={() => setComplaintOpen(true)} className="btn-primary flex items-center gap-2 text-sm px-4 py-2 whitespace-nowrap">
             <MessageSquare size={13} />Send Complaint
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex p-1 rounded-xl w-fit" style={{ background: P.accent }}>
+      <div className="flex flex-wrap p-1 rounded-xl w-fit max-w-full" style={{ background: P.accent }}>
         {[
           { key: 'notifications', label: 'Notifications', count: unreadCount },
           { key: 'complaints',    label: 'My Complaints & Requests', count: openCount },
         ].map(({ key, label, count }) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
             style={{
               background: activeTab === key ? '#fff' : 'transparent',
               color:      activeTab === key ? P.primary : P.muted,
             }}>
             {label}
             {count > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0"
                 style={{ background: P.primary }}>{count}</span>
             )}
           </button>

@@ -8,7 +8,7 @@ export default function SearchBar({ value, onChange, placeholder = 'Search...' }
 
   return (
     <div
-      className="relative"
+      className="relative w-full sm:w-64"
       style={{
         transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)',
         transform: focused ? 'scale(1.01)' : 'scale(1)',
@@ -27,7 +27,7 @@ export default function SearchBar({ value, onChange, placeholder = 'Search...' }
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="input-field pl-8 w-64"
+        className="input-field pl-8 w-full"
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />

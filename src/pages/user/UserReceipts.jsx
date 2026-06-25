@@ -91,12 +91,12 @@ export default function UserReceipts() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="section-title text-xl">My Receipts</h1>
           <p className="section-subtitle">Download or print your verified payment receipts</p>
         </div>
-        <button onClick={load} className="btn-secondary flex items-center gap-2">
+        <button onClick={load} className="btn-secondary flex items-center justify-center gap-2 self-start sm:self-auto">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
@@ -119,11 +119,11 @@ export default function UserReceipts() {
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
           <h2 className="text-sm font-semibold text-[#022b3a]">My Payment Receipts</h2>
-          <div className="relative">
+          <div className="relative w-full sm:w-48">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1f7a8c]" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="Search receipt no…"
-              className="input-field pl-8 w-48 text-xs" />
+              className="input-field pl-8 w-full text-xs" />
           </div>
         </div>
 
