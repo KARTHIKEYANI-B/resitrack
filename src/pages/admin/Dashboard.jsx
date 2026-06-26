@@ -322,14 +322,14 @@ export default function Dashboard() {
       </div>
 
       {/* Non-current month info banner */}
-      {!isCurrentMonth && !loading && (
+      {/* {!isCurrentMonth && !loading && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#f0f8fb] border border-[#bfdbf7] text-xs text-[#1f7a8c]">
           <Calendar size={13} className="flex-shrink-0" />
           All cards below show data for&nbsp;
           <span className="font-semibold text-[#022b3a]">{selectedMonthLabel}</span>
           &nbsp;only.
         </div>
-      )}
+      )} */}
 
       {/* ── Row 1 — Revenue + Expense + Balance ──────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
