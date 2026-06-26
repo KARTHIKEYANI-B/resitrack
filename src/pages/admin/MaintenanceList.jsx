@@ -232,6 +232,7 @@ export default function MaintenanceList() {
   const totalFlat   = data?.totalFlatMaintenance  ?? 0
   const totalVilla  = data?.totalVillaMaintenance ?? 0
   const grandTotal  = data?.grandTotal            ?? 0
+  const grandTotalPaid = data?.grandTotalPaid     ?? 0
 
   // Recompute paid counts from pendingAmount (source of truth) rather than
   // trusting the backend summary counts, which can lag behind if the status
@@ -326,13 +327,19 @@ export default function MaintenanceList() {
       )} */}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-in">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 animate-fade-in">
         <SummaryCard
           icon={IndianRupee}
           label="Total Maintenance Amount Due"
           value={formatCurrency(grandTotal)}
           sub={`${totalOwners} owners`}
           highlight
+        />
+        <SummaryCard
+          icon={CheckCircle}
+          label="Total Paid Amount"
+          value={formatCurrency(grandTotalPaid)}
+          sub="Flat + Villa, this month"
         />
         <SummaryCard
           icon={Building2}
