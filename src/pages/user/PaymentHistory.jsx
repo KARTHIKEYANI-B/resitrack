@@ -104,7 +104,7 @@ export default function PaymentHistory() {
                       <td className="table-cell font-mono text-[#022b3a] whitespace-nowrap">{formatCurrency(p.amount)}</td>
                       <td className="table-cell font-mono text-xs whitespace-nowrap">
                         {p.lateFee > 0
-                          ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span>
+                          ? <span className="text-[#022b3a]">{formatCurrency(p.lateFee)}</span>
                           : <span className="text-[#022b3a]">—</span>}
                       </td>
                       <td className="table-cell whitespace-nowrap">{p.paymentMethod}</td>
@@ -136,7 +136,7 @@ export default function PaymentHistory() {
                       <p className="text-[#1f7a8c]">Late Fee</p>
                       <p className="font-mono">
                         {p.lateFee > 0
-                          ? <span className="text-red-400">{formatCurrency(p.lateFee)}</span>
+                          ? <span className="text-[#022b3a]">{formatCurrency(p.lateFee)}</span>
                           : <span className="text-[#022b3a]">—</span>}
                       </p>
                     </div>

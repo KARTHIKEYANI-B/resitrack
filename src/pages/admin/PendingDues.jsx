@@ -195,8 +195,8 @@ export default function PendingDues() {
                       </td>
                       <td className="table-cell text-xs whitespace-nowrap">{d.month}</td>
                       <td className="table-cell font-mono text-xs whitespace-nowrap">{formatCurrency(d.assignedAmount ?? 0)}</td>
-                      <td className="table-cell font-mono text-xs text-green-500 whitespace-nowrap">{formatCurrency(d.paidSoFar ?? 0)}</td>
-                      <td className="table-cell font-mono text-xs text-red-400 font-semibold whitespace-nowrap">{formatCurrency(d.remainingDue ?? 0)}</td>
+                      <td className="table-cell font-mono text-xs whitespace-nowrap">{formatCurrency(d.paidSoFar ?? 0)}</td>
+                      <td className="table-cell font-mono text-xs font-semibold whitespace-nowrap">{formatCurrency(d.remainingDue ?? 0)}</td>
                       <td className="table-cell text-xs whitespace-nowrap">{formatDate(d.dueDate)}</td>
                       <td className="table-cell">{statusBadge(d.status)}</td>
                       <td className="table-cell">
@@ -251,11 +251,11 @@ export default function PendingDues() {
                     </div>
                     <div>
                       <p className="text-[10px] text-[#1f7a8c] uppercase tracking-wide">Paid</p>
-                      <p className="font-mono text-xs text-green-500">{formatCurrency(d.paidSoFar ?? 0)}</p>
+                      <p className="font-mono text-xs">{formatCurrency(d.paidSoFar ?? 0)}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-[#bfdbf7]">
-                    <p className="font-mono text-sm text-red-400 font-semibold">
+                    <p className="font-mono text-sm font-semibold text-[#022b3a]">
                       Due: {formatCurrency(d.remainingDue ?? 0)}
                     </p>
                     <div className="flex gap-1.5">

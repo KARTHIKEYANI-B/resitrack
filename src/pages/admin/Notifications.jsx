@@ -212,7 +212,7 @@ export default function AdminNotifications() {
                           {n.residentName  && <div><span className="text-[10px] text-[#1f7a8c]">Resident</span><p className="text-xs text-[#022b3a]">{n.residentName}</p></div>}
                           {n.flatNumber    && <div><span className="text-[10px] text-[#1f7a8c]">Flat</span><p className="text-xs text-[#022b3a]">{n.flatNumber}</p></div>}
                           {n.transactionId && <div><span className="text-[10px] text-[#1f7a8c]">Transaction ID</span><p className="text-xs font-mono text-[#022b3a]">{n.transactionId}</p></div>}
-                          {n.paymentAmount && <div><span className="text-[10px] text-[#1f7a8c]">Amount</span><p className="text-xs font-mono text-yellow-300">{formatCurrency(n.paymentAmount)}</p></div>}
+                          {n.paymentAmount && <div><span className="text-[10px] text-[#1f7a8c]">Amount</span><p className="text-xs font-mono text-[#022b3a]">{formatCurrency(n.paymentAmount)}</p></div>}
                           {n.paymentMethod && <div><span className="text-[10px] text-[#1f7a8c]">Method</span><p className="text-xs text-[#022b3a]">{n.paymentMethod}</p></div>}
                         </div>
                       )}

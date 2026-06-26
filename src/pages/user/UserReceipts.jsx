@@ -108,7 +108,7 @@ export default function UserReceipts() {
           <p className="text-xs text-[#1f7a8c] mt-1">Total Receipts</p>
         </div>
         <div className="card card-hover text-center py-4">
-          <p className="text-lg font-bold font-mono text-green-400">
+          <p className="text-lg font-bold font-mono text-[#022b3a]">
             {formatCurrency(receipts.reduce((s, r) => s + Number(r.totalAmount ?? r.paidAmount ?? 0), 0))}
           </p>
           <p className="text-xs text-[#1f7a8c] mt-1">Total Paid</p>
@@ -156,7 +156,7 @@ export default function UserReceipts() {
                       </td>
                       <td className="table-cell font-mono text-xs">
                         {r.lateFeeAmount > 0
-                          ? <span className="text-red-400">{formatCurrency(r.lateFeeAmount)}</span>
+                          ? <span className="text-[#022b3a]">{formatCurrency(r.lateFeeAmount)}</span>
                           : <span className="text-[#022b3a]/30">—</span>}
                       </td>
                       <td className="table-cell text-xs">{formatDate(r.paymentDate)}</td>

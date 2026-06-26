@@ -140,13 +140,12 @@ function OwnerTable({ owners, search }) {
                     </p>
                   )} */}
                 </td>
-                {/* Paid amount – green; shows property-level total (owner + FM) */}
-                <td className="table-cell font-mono text-xs text-green-600">
+                {/* Paid amount — property-level total (owner + FM) */}
+                <td className="table-cell font-mono text-xs font-semibold text-[#022b3a]">
                   {formatCurrency(o.paidAmount ?? 0)}
                 </td>
-                {/* Pending amount – red; 0.00 when status = PAID */}
-                <td className="table-cell font-mono text-xs font-semibold"
-                    style={{ color: (o.pendingAmount ?? 0) > 0 ? '#ef4444' : '#16a34a' }}>
+                {/* Pending amount */}
+                <td className="table-cell font-mono text-xs font-semibold text-[#022b3a]">
                   {formatCurrency(o.pendingAmount ?? 0)}
                 </td>
                 {/* Status badge – derived purely from pendingAmount on the backend */}

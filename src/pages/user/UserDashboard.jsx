@@ -116,15 +116,13 @@ export default function UserDashboard() {
           <div className="flex items-start justify-between">
             <div className="min-w-0">
               <p className="stat-label">This Month's Maintenance Due</p>
-              <p className={`text-2xl font-bold font-mono mt-1 ${
-                isPaid ? 'text-green-400' : isOverdue ? 'text-red-400' : 'text-[#022b3a]'
-              }`}>
+              <p className="text-2xl font-bold font-mono mt-1 text-[#022b3a]">
                 {isPaid ? '₹0' : formatCurrency(currentDue)}
               </p>
               <p className="text-xs text-[#1f7a8c] mt-1">
                 Maintenance: {formatCurrency(monthlyDue)}
                 {s.lateFeeApplied && s.lateFee > 0 && (
-                  <span className="text-red-400"> + {formatCurrency(s.lateFee)} late fee</span>
+                  <span className="text-[#022b3a]"> + {formatCurrency(s.lateFee)} late fee</span>
                 )}
               </p>
             </div>
@@ -173,8 +171,8 @@ export default function UserDashboard() {
             </div>
           </div>
           {isPaid && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-green-400">
-              <CheckCircle size={11} />
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-[#022b3a]">
+              <CheckCircle size={11} className="text-green-400" />
               Paid: {formatCurrency(paidAmount)}
             </div>
           )}

@@ -360,7 +360,7 @@ export default function PaymentVerification() {
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="card card-hover text-center py-4 animate-pop-in">
             <Icon size={18} className={`mx-auto mb-1 ${color}`} />
-            <p className={`text-2xl font-bold font-mono ${color}`}>{value}</p>
+            <p className="text-2xl font-bold font-mono text-[#022b3a]">{value}</p>
             <p className="text-xs text-[#1f7a8c] mt-0.5">{label}</p>
           </div>
         ))}

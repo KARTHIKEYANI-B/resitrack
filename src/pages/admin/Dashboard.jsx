@@ -106,17 +106,17 @@ function BalanceCard({ totalBalance, bankBalance, cashBalance, totalExpense, ban
             </p>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-[#022b3a]/60">Received</span>
-              <span className="text-[11px] font-mono text-green-600 font-semibold">
-                +{fmt(Number(bankBalance ?? 0) + Number(bankExpense ?? 0))}
+              <span className="text-[11px] font-mono text-[#022b3a] font-semibold">
+                {fmt(Number(bankBalance ?? 0) + Number(bankExpense ?? 0))}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-[#022b3a]/60">Expenses</span>
-              <span className="text-[11px] font-mono text-red-500 font-semibold">−{fmt(bankExpense)}</span>
+              <span className="text-[11px] font-mono text-[#022b3a] font-semibold">{fmt(bankExpense)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-[#e1e5f2] pt-1 mt-1">
               <span className="text-[11px] text-[#022b3a]/70 font-semibold">Bank Available Balance</span>
-              <span className={`text-[11px] font-mono font-bold ${bankBalance >= 0 ? 'text-[#022b3a]' : 'text-red-500'}`}>
+              <span className="text-[11px] font-mono font-bold text-[#022b3a]">
                 {fmt(bankBalance)}
               </span>
             </div>
@@ -128,17 +128,17 @@ function BalanceCard({ totalBalance, bankBalance, cashBalance, totalExpense, ban
             </p>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-[#022b3a]/60">Received</span>
-              <span className="text-[11px] font-mono text-green-600 font-semibold">
-                +{fmt(Number(cashBalance ?? 0) + Number(cashExpense ?? 0))}
+              <span className="text-[11px] font-mono text-[#022b3a] font-semibold">
+                {fmt(Number(cashBalance ?? 0) + Number(cashExpense ?? 0))}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-[#022b3a]/60">Expenses</span>
-              <span className="text-[11px] font-mono text-red-500 font-semibold">−{fmt(cashExpense)}</span>
+              <span className="text-[11px] font-mono text-[#022b3a] font-semibold">{fmt(cashExpense)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-[#e1e5f2] pt-1 mt-1">
               <span className="text-[11px] text-[#022b3a]/70 font-semibold">Cash Available Balance</span>
-              <span className={`text-[11px] font-mono font-bold ${cashBalance >= 0 ? 'text-[#022b3a]' : 'text-red-500'}`}>
+              <span className="text-[11px] font-mono font-bold text-[#022b3a]">
                 {fmt(cashBalance)}
               </span>
             </div>

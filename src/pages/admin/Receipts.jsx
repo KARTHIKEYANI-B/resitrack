@@ -86,7 +86,7 @@ export function ReceiptLayout({ receipt }) {
         {late > 0 && (
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-[#6b7280] font-sans uppercase tracking-wide">Late Fee</span>
-            <span className="text-[13px] font-semibold font-sans text-red-600">{formatCurrency(late)}</span>
+            <span className="text-[13px] font-semibold font-sans text-[#022b3a]">{formatCurrency(late)}</span>
           </div>
         )}
         {/* Dotted subtotal line */}
@@ -288,7 +288,7 @@ export default function Receipts() {
                       </td>
                       <td className="table-cell font-mono text-xs">
                         {r.lateFeeAmount > 0
-                          ? <span className="text-red-400">{formatCurrency(r.lateFeeAmount)}</span>
+                          ? <span className="text-[#022b3a]">{formatCurrency(r.lateFeeAmount)}</span>
                           : <span className="text-[#022b3a]/30">—</span>
                         }
                       </td>

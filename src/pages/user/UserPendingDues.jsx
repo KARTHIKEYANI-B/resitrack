@@ -91,7 +91,7 @@ export default function UserPendingDues() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="stat-label">Total Outstanding Balance</p>
-                    <p className="stat-value mt-1 text-red-400">{formatCurrency(totalPending)}</p>
+                    <p className="stat-value mt-1">{formatCurrency(totalPending)}</p>
                     <p className="text-xs text-[#1f7a8c] mt-1">Outstanding balance</p>
                   </div>
                   <div className="stat-icon"><IndianRupee size={17} className="text-red-400/60" /></div>
@@ -101,7 +101,7 @@ export default function UserPendingDues() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="stat-label">Total Amount Paid</p>
-                    <p className="stat-value mt-1 text-green-400">{formatCurrency(totalPaid)}</p>
+                    <p className="stat-value mt-1">{formatCurrency(totalPaid)}</p>
                     <p className="text-xs text-[#1f7a8c] mt-1">Payments received</p>
                   </div>
                   <div className="stat-icon"><CheckCircle size={17} className="text-green-400/60" /></div>
@@ -160,10 +160,10 @@ export default function UserPendingDues() {
                       <td className="table-cell font-mono">
                         {formatCurrency(d.assignedAmount ?? d.dueAmount ?? 0)}
                       </td>
-                      <td className="table-cell font-mono text-green-400">
+                      <td className="table-cell font-mono">
                         {formatCurrency(d.paidSoFar ?? d.paidAmount ?? 0)}
                       </td>
-                      <td className="table-cell font-mono font-semibold text-red-400">
+                      <td className="table-cell font-mono font-semibold">
                         {formatCurrency(d.remainingDue ?? d.pendingAmount ?? 0)}
                       </td>
                       <td className="table-cell text-xs">
@@ -182,10 +182,10 @@ export default function UserPendingDues() {
                     <td className="table-cell font-mono font-semibold text-[#022b3a]">
                       {formatCurrency(totalAssigned)}
                     </td>
-                    <td className="table-cell font-mono font-semibold text-green-400">
+                    <td className="table-cell font-mono font-semibold text-[#022b3a]">
                       {formatCurrency(totalPaid)}
                     </td>
-                    <td className="table-cell font-mono font-bold text-red-400">
+                    <td className="table-cell font-mono font-bold text-[#022b3a]">
                       {formatCurrency(totalPending)}
                     </td>
                     <td className="table-cell" />
@@ -214,13 +214,13 @@ export default function UserPendingDues() {
                     </div>
                     <div className="bg-green-950/20 rounded-lg p-2">
                       <p className="text-[10px] text-[#1f7a8c]">Paid</p>
-                      <p className="text-xs font-mono font-semibold text-green-400">
+                      <p className="text-xs font-mono font-semibold text-[#022b3a]">
                         {formatCurrency(d.paidSoFar ?? d.paidAmount ?? 0)}
                       </p>
                     </div>
                     <div className="bg-red-950/20 rounded-lg p-2">
                       <p className="text-[10px] text-[#1f7a8c]">Pending</p>
-                      <p className="text-xs font-mono font-bold text-red-400">
+                      <p className="text-xs font-mono font-bold text-[#022b3a]">
                         {formatCurrency(d.remainingDue ?? d.pendingAmount ?? 0)}
                       </p>
                     </div>

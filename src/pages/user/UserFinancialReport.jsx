@@ -148,7 +148,7 @@ export default function UserFinancialReport() {
             <IndianRupee size={16} className="text-[#022b3a]/50" />
             <span className="text-sm font-semibold text-[#022b3a]">Total Balance</span>
           </div>
-          <span className={`text-xl font-bold font-mono ${balance >= 0 ? 'text-[#1f7a8c]' : 'text-red-500'}`}>
+          <span className="text-xl font-bold font-mono text-[#022b3a]">
             {fmt(balance)}
           </span>
         </div>

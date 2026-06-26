@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle, XCircle, Clock, Plus, RefreshCw,
-  UserCheck, UserX, AlertTriangle, TrendingUp,
+  UserCheck, AlertTriangle, TrendingUp,
   Smartphone, Building2, Banknote,
-  ShieldCheck, ShieldX, Shield, IndianRupee
+  ShieldCheck, ShieldX, IndianRupee,
+  ArrowDownCircle, ArrowUpCircle, Receipt as ReceiptIcon
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
 import { PageLoader } from '../../components/common/LoadingSpinner'
@@ -16,11 +17,9 @@ import { formatDate } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
 
 /* ── Constants — CARD removed ────────────────────────────────────────── */
-const STATUS_OPTIONS = [
-  { value: 'PENDING_VERIFICATION', label: 'Pending Verification' },
-  { value: 'PAID',                 label: 'Paid' },
-  { value: 'PENDING',              label: 'Pending' },
-  { value: 'OVERDUE',              label: 'Overdue' },
+const TXN_TYPE_OPTIONS = [
+  { value: 'INCOME',  label: 'Income' },
+  { value: 'EXPENSE', label: 'Expense' },
 ]
 const PAYMENT_MODES = [
   { value: 'UPI',           label: 'UPI',          icon: Smartphone },
@@ -46,27 +45,18 @@ const fmt = (v) => {
   return '₹\u00A0' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-/* ── Status badge ────────────────────────────────────────────────────── */
-function StatusBadge({ status }) {
-  const map = {
-    PAID:                 { cls: 'bg-green-950/50 border-green-800/50 text-green-400',    icon: ShieldCheck,    label: 'Paid' },
-    PENDING_VERIFICATION: { cls: 'bg-yellow-950/50 border-yellow-800/50 text-yellow-400', icon: Clock,          label: 'Awaiting Verification' },
-    PENDING:              { cls: 'bg-[#e1e5f2] border-[#bfdbf7] text-[#022b3a]/50',       icon: Shield,         label: 'Pending' },
-    OVERDUE:              { cls: 'bg-red-950/50 border-red-800/50 text-red-400',           icon: AlertTriangle,  label: 'Overdue' },
-  }
-  const c = map[status] || map.PENDING; const Icon = c.icon
+/* ── Transaction type badge (Income / Expense) ───────────────────────── */
+function TransactionTypeBadge({ type }) {
+  const isIncome = type === 'INCOME'
+  const cls = isIncome
+    ? 'bg-green-950/50 border-green-800/50 text-green-400'
+    : 'bg-red-950/50 border-red-800/50 text-red-400'
+  const Icon = isIncome ? ArrowUpCircle : ArrowDownCircle
   return (
-    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${c.cls}`}>
-      <Icon size={10} />{c.label}
+    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${cls}`}>
+      <Icon size={10} />{isIncome ? 'Income' : 'Expense'}
     </span>
   )
-}
-
-/* ── Method badge — CARD removed ─────────────────────────────────────── */
-function MethodBadge({ method }) {
-  const map = { UPI: Smartphone, BANK_TRANSFER: Building2, CASH: Banknote, GPAY: Smartphone }
-  const Icon = map[method] || Banknote
-  return <span className="inline-flex items-center gap-1 text-xs text-[#1f7a8c]"><Icon size={11} />{method || '—'}</span>
 }
 
 /* ── Collection Progress Bar ─────────────────────────────────────────── */
@@ -239,11 +229,12 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
 /* ── Main Component ──────────────────────────────────────────────────── */
 export default function PaymentTracking() {
   const [payments,      setPayments]     = useState([])
+  const [transactions,  setTransactions] = useState([])
   const [trackStats,    setTrackStats]   = useState(null)
   const [loading,       setLoading]      = useState(true)
   const [refreshing,    setRefreshing]   = useState(false)
   const [search,        setSearch]       = useState('')
-  const [statusFilter,  setStatusFilter] = useState('')
+  const [txnTypeFilter, setTxnTypeFilter] = useState('')
   const [methodFilter,  setMethodFilter] = useState('')
   const [page,          setPage]         = useState(1)
   const [showAdd,       setShowAdd]      = useState(false)
@@ -255,9 +246,10 @@ export default function PaymentTracking() {
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
-      const [pmtsRes, statsRes] = await Promise.allSettled([
-        adminAPI.getAllPayments(statusFilter ? { status: statusFilter } : {}),
+      const [pmtsRes, statsRes, txnRes] = await Promise.allSettled([
+        adminAPI.getAllPayments({}),
         adminAPI.getPaymentTrackingStats ? adminAPI.getPaymentTrackingStats() : Promise.reject(),
+        adminAPI.getTransactionLedger ? adminAPI.getTransactionLedger() : Promise.reject(),
       ])
       if (pmtsRes.status === 'fulfilled') {
         const d = pmtsRes.value.data
@@ -267,10 +259,14 @@ export default function PaymentTracking() {
         const d = statsRes.value.data
         setTrackStats(d?.data ?? d)
       }
+      if (txnRes.status === 'fulfilled') {
+        const d = txnRes.value.data
+        setTransactions(Array.isArray(d) ? d : (d?.data ?? []))
+      }
     } catch {
       if (!silent) toast.error('Could not load payments.')
     } finally { setLoading(false); setRefreshing(false) }
-  }, [statusFilter])
+  }, [])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -297,11 +293,20 @@ export default function PaymentTracking() {
     } finally { setActionId(null) }
   }
 
-  const filtered = payments.filter(p => {
+  // Pending-verification items still come from the regular payments feed —
+  // this is unrelated to the new ledger (which only ever shows realized
+  // PAID transactions + expenses) and preserves the existing approve/reject
+  // capability for admin-recorded-but-unverified payments on this page.
+  const pendingVerificationList = payments.filter(p => p.paymentStatus === 'PENDING_VERIFICATION')
+
+  const filtered = transactions.filter(t => {
     const q = search.toLowerCase()
-    return ((p.residentName  ?? '').toLowerCase().includes(q) ||
-            (p.flatNumber    ?? '').toLowerCase().includes(q))
-      && (!methodFilter || p.paymentMethod === methodFilter)
+    return ((t.residentName ?? '').toLowerCase().includes(q) ||
+            (t.flatNumber   ?? '').toLowerCase().includes(q) ||
+            (t.category     ?? '').toLowerCase().includes(q) ||
+            (t.description  ?? '').toLowerCase().includes(q))
+      && (!txnTypeFilter || t.type === txnTypeFilter)
+      && (!methodFilter  || t.paymentMethod === methodFilter)
   })
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
@@ -310,7 +315,7 @@ export default function PaymentTracking() {
   const ts = trackStats || null
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
   const paidLocal    = payments.filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth).length
-  const pendVerif    = payments.filter(p => p.paymentStatus === 'PENDING_VERIFICATION').length
+  const pendVerif    = pendingVerificationList.length
   const totalCollected = ts?.totalCollectedThisMonth ?? payments
     .filter(p => p.paymentStatus === 'PAID' && p.paymentMonth === currentMonth)
     .reduce((s, p) => s + Number(p.amount ?? 0), 0)
@@ -340,8 +345,6 @@ export default function PaymentTracking() {
   const statsCards = [
     { label: 'Active Owners',        value: ts?.totalActiveOwners   ?? '—',         icon: UserCheck },
     { label: 'Paid This Month',      value: ts?.paidOwners          ?? paidLocal,   icon: CheckCircle, green: true },
-    { label: 'Unpaid',               value: ts?.unpaidOwners        ?? '—',         icon: UserX },
-    { label: 'Overdue',              value: ts?.overdueOwners       ?? 0,           icon: AlertTriangle, red: true },
     { label: 'Pending Verification', value: ts?.pendingVerification ?? pendVerif,   icon: Clock, yellow: (ts?.pendingVerification ?? pendVerif) > 0 },
   ]
 
@@ -356,7 +359,7 @@ export default function PaymentTracking() {
         <div>
           <h1 className="section-title text-xl">Payment Management</h1>
           <p className="section-subtitle">
-            Monitor and verify all maintenance payments · {new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}
+            Income and expense transaction ledger · {new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -371,12 +374,12 @@ export default function PaymentTracking() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {statsCards.map(({ label, value, icon: Icon, green, red, yellow }) => (
           <div key={label} className={`card card-hover text-center py-3 px-2 border ${
             yellow ? 'border-yellow-900/40' : red ? 'border-red-900/40' : 'border-transparent'}`}>
             <Icon size={16} className={`mx-auto mb-1 ${green ? 'text-green-400' : yellow ? 'text-yellow-400' : red ? 'text-red-400' : 'text-[#022b3a]/40'}`} />
-            <p className={`text-xl font-bold font-mono ${green ? 'text-green-400' : yellow ? 'text-yellow-400' : red ? 'text-red-400' : 'text-[#022b3a]'}`}>
+            <p className="text-xl font-bold font-mono text-[#022b3a]">
               {value}
             </p>
             <p className="text-[10px] text-[#1f7a8c] mt-0.5 leading-tight">{label}</p>
@@ -391,7 +394,7 @@ export default function PaymentTracking() {
             <p className="text-sm font-semibold text-[#022b3a] flex items-center gap-2">
               <TrendingUp size={14} /> Collection Rate
             </p>
-            <p className={`text-lg font-bold font-mono ${collPct >= 80 ? 'text-green-400' : collPct >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+            <p className="text-lg font-bold font-mono text-[#022b3a]">
               {collPct.toFixed(1)}%
             </p>
           </div>
@@ -409,34 +412,67 @@ export default function PaymentTracking() {
         />
       </div>
 
-      {/* Pending verification alert */}
-      {pendVerif > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-yellow-950/20 border border-yellow-900/40 rounded-xl">
-          <Clock size={14} className="text-yellow-400 flex-shrink-0" />
-          <p className="text-sm text-yellow-200">
-            <strong>{pendVerif}</strong> payment{pendVerif > 1 ? 's' : ''} awaiting your verification.
-          </p>
+      {/* Pending Verification — preserves the existing approve/reject
+          capability for admin-recorded-but-unverified payments on this
+          page. Separate from, and unaffected by, the Payment Verification
+          page's own screenshot-based workflow. */}
+      {pendingVerificationList.length > 0 && (
+        <div className="card p-0 overflow-hidden border border-yellow-900/40">
+          <div className="flex items-center gap-2 p-4 border-b border-[#bfdbf7] bg-yellow-950/10">
+            <Clock size={14} className="text-yellow-500 flex-shrink-0" />
+            <h2 className="text-sm font-semibold text-[#022b3a]">
+              Pending Verification
+              <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({pendingVerificationList.length})</span>
+            </h2>
+          </div>
+          <div className="divide-y divide-[#bfdbf7]">
+            {pendingVerificationList.map(p => (
+              <div key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-medium text-sm text-[#022b3a]">{p.residentName ?? '—'}</p>
+                    <p className="text-xs text-[#1f7a8c] font-mono">{p.flatNumber ?? '—'} · {fmt(p.amount ?? 0)} · {p.paymentMonth}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-green-950/30 text-green-400 hover:bg-green-950/60 border border-green-900/50 disabled:opacity-50 transition-all">
+                    <CheckCircle size={12} /> Approve
+                  </button>
+                  <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-red-950/30 text-red-400 hover:bg-red-950/60 border border-red-900/50 disabled:opacity-50 transition-all">
+                    <XCircle size={12} /> Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Payments Table */}
+      {/* Unified Transaction Ledger — income (owner maintenance payments +
+          maintenance batch payments) and expenses, sorted by transaction
+          date descending. Read directly from GET /admin/payments/transactions,
+          which itself only reads existing PAID Payment / BatchPayment /
+          Expense rows — no hardcoded values. */}
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-[#bfdbf7]">
           <h2 className="text-sm font-semibold text-[#022b3a]">
-            All Payments
+            Transaction Ledger
             <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({filtered.length})</span>
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <FilterSelect value={statusFilter} onChange={v => { setStatusFilter(v); setPage(1) }} options={STATUS_OPTIONS} placeholder="All Status" />
+            <FilterSelect value={txnTypeFilter} onChange={v => { setTxnTypeFilter(v); setPage(1) }} options={TXN_TYPE_OPTIONS} placeholder="All Types" />
             <FilterSelect value={methodFilter} onChange={v => { setMethodFilter(v); setPage(1) }} options={PAYMENT_MODES.map(m => ({ value: m.value, label: m.label }))} placeholder="All Methods" />
-            <SearchBar value={search} onChange={v => { setSearch(v); setPage(1) }} placeholder="Name or flat…" />
+            <SearchBar value={search} onChange={v => { setSearch(v); setPage(1) }} placeholder="Name, flat, category…" />
           </div>
         </div>
 
         {paginated.length === 0 ? (
           <EmptyState
-            title="No payments found"
-            description={search || statusFilter ? 'Try different filters.' : 'Payments will appear here after residents submit or admin records them.'}
+            icon={ReceiptIcon}
+            title="No transactions found"
+            description={search || txnTypeFilter || methodFilter ? 'Try different filters.' : 'Income and expense records will appear here once payments are verified or expenses are added.'}
           />
         ) : (
           <>
@@ -445,41 +481,29 @@ export default function PaymentTracking() {
               <table className="w-full rt-table-animate">
                 <thead className="border-b border-[#bfdbf7] bg-white/50">
                   <tr>
-                    {['Resident Name', 'Flat / Villa', 'Amount', 'Payment Status', 'Payment Date', 'Payment Method', 'Actions'].map(h => (
+                    {['S.No', 'Date', 'Type', 'Category', 'Description', 'Resident Name', 'Flat / Villa', 'Amount'].map(h => (
                       <th key={h} className="table-header text-xs">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map(p => (
-                    <tr key={p.id} className="table-row">
+                  {paginated.map(t => (
+                    <tr key={`${t.sourceType}-${t.sourceId}`} className="table-row">
+                      <td className="table-cell text-xs text-[#022b3a]/60 font-mono">{t.serialNo}</td>
+                      <td className="table-cell text-xs text-[#022b3a]/70">{formatDate(t.date)}</td>
+                      <td className="table-cell"><TransactionTypeBadge type={t.type} /></td>
                       <td className="table-cell">
-                        <p className="font-medium text-[#022b3a] text-sm">{p.residentName ?? '—'}</p>
+                        <p className="text-sm text-[#022b3a]">{t.category ?? '—'}</p>
                       </td>
                       <td className="table-cell">
-                        <p className="font-mono text-xs">{p.flatNumber ?? '—'}</p>
-                        <p className="text-[10px] text-[#1f7a8c]">{p.flatType ?? ''}</p>
+                        <p className="text-xs text-[#1f7a8c] max-w-[220px] truncate" title={t.description}>{t.description ?? '—'}</p>
                       </td>
-                      <td className="table-cell font-mono text-sm text-[#022b3a]">
-                        {fmt(p.amount ?? 0)}
-                        {p.lateFeeAmount > 0 && <p className="text-[10px] text-red-400">+{fmt(p.lateFeeAmount)} late</p>}
-                      </td>
-                      <td className="table-cell"><StatusBadge status={p.paymentStatus} /></td>
-                      <td className="table-cell text-xs text-[#022b3a]/70">{formatDate(p.paymentDate)}</td>
-                      <td className="table-cell"><MethodBadge method={p.paymentMethod} /></td>
                       <td className="table-cell">
-                        {p.paymentStatus === 'PENDING_VERIFICATION' ? (
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
-                              className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-green-950/30 text-green-400 hover:bg-green-950/60 border border-green-900/50 disabled:opacity-50 transition-all">
-                              <CheckCircle size={10} /> Approve
-                            </button>
-                            <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
-                              className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg bg-red-950/30 text-red-400 hover:bg-red-950/60 border border-red-900/50 disabled:opacity-50 transition-all">
-                              <XCircle size={10} /> Reject
-                            </button>
-                          </div>
-                        ) : <span className="text-[10px] text-[#022b3a]/20">—</span>}
+                        <p className="font-medium text-[#022b3a] text-sm">{t.residentName ?? '—'}</p>
+                      </td>
+                      <td className="table-cell font-mono text-xs">{t.flatNumber ?? '—'}</td>
+                      <td className="table-cell font-mono text-sm font-semibold text-[#022b3a]">
+                        {fmt(t.amount ?? 0)}
                       </td>
                     </tr>
                   ))}
@@ -489,32 +513,30 @@ export default function PaymentTracking() {
 
             {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-[#bfdbf7]">
-              {paginated.map(p => (
-                <div key={p.id} className="p-4 space-y-3">
+              {paginated.map(t => (
+                <div key={`${t.sourceType}-${t.sourceId}`} className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-sm text-[#022b3a]">{p.residentName ?? '—'}</p>
-                      <p className="text-xs text-[#1f7a8c] font-mono mt-0.5">{p.flatNumber ?? '—'} · {p.flatType ?? ''}</p>
+                      <p className="text-[10px] text-[#1f7a8c] font-mono">#{t.serialNo} · {formatDate(t.date)}</p>
+                      <p className="font-semibold text-sm text-[#022b3a] mt-0.5">{t.category ?? '—'}</p>
                     </div>
-                    <StatusBadge status={p.paymentStatus} />
+                    <TransactionTypeBadge type={t.type} />
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><p className="text-[#1f7a8c]">Amount</p><p className="font-mono font-semibold text-[#022b3a]">{fmt(p.amount ?? 0)}</p></div>
-                    <div><p className="text-[#1f7a8c]">Method</p><MethodBadge method={p.paymentMethod} /></div>
-                    <div><p className="text-[#1f7a8c]">Date</p><p className="text-[#022b3a]">{formatDate(p.paymentDate)}</p></div>
-                  </div>
-                  {p.paymentStatus === 'PENDING_VERIFICATION' && (
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={() => handleApprove(p.id)} disabled={actionId === p.id}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-green-950/30 text-green-400 border border-green-900/50 disabled:opacity-50">
-                        <CheckCircle size={12} /> Approve
-                      </button>
-                      <button onClick={() => { setRejectModal(p); setRejectReason('') }} disabled={actionId === p.id}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-red-950/30 text-red-400 border border-red-900/50 disabled:opacity-50">
-                        <XCircle size={12} /> Reject
-                      </button>
+                  <p className="text-xs text-[#1f7a8c]">{t.description ?? '—'}</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                    {(t.residentName || t.flatNumber) && (
+                      <div>
+                        <p className="text-[#1f7a8c]">Resident</p>
+                        <p className="text-[#022b3a]">{t.residentName ?? '—'} {t.flatNumber ? `· ${t.flatNumber}` : ''}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-[#1f7a8c]">Amount</p>
+                      <p className="font-mono font-semibold text-[#022b3a]">
+                        {fmt(t.amount ?? 0)}
+                      </p>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>

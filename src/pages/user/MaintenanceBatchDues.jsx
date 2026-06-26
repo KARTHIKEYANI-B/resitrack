@@ -109,7 +109,7 @@ export default function MaintenanceBatchDues() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="stat-label">Outstanding Batch Dues</p>
-                <p className="stat-value mt-1 text-red-500">{formatCurrency(totalUnpaid)}</p>
+                <p className="stat-value mt-1">{formatCurrency(totalUnpaid)}</p>
                 <p className="text-xs text-[#1f7a8c] mt-1">{unpaidCount} unpaid batch{unpaidCount === 1 ? '' : 'es'}</p>
               </div>
               <div className="stat-icon"><IndianRupee size={17} className="text-red-400/60" /></div>
@@ -119,7 +119,7 @@ export default function MaintenanceBatchDues() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="stat-label">Batches Paid</p>
-                <p className="stat-value mt-1 text-green-600">{paidCount}</p>
+                <p className="stat-value mt-1">{paidCount}</p>
                 <p className="text-xs text-[#1f7a8c] mt-1">Verified by admin</p>
               </div>
               <div className="stat-icon"><CheckCircle size={17} className="text-green-500/60" /></div>
@@ -235,7 +235,7 @@ export default function MaintenanceBatchDues() {
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3">
             <span className="text-sm text-blue-900">Amount Due</span>
-            <span className="text-lg font-bold text-blue-950 font-mono">{formatCurrency(selected?.amount)}</span>
+            <span className="text-lg font-bold text-[#022b3a] font-mono">{formatCurrency(selected?.amount)}</span>
           </div>
 
           <div>

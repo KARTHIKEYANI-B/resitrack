@@ -62,6 +62,7 @@ export const adminAPI = {
   getAllPayments:           (params)     => axiosInstance.get('/admin/payments', { params }),
   createAdminPayment:      (data)       => axiosInstance.post('/admin/payments', data),
   getPaymentTrackingStats: ()           => axiosInstance.get('/admin/payments/tracking-stats'),
+  getTransactionLedger:    ()           => axiosInstance.get('/admin/payments/transactions'),
   approvePayment:          (id)         => axiosInstance.put(`/admin/payments/${id}/approve`),
   rejectPayment:           (id, reason) => axiosInstance.put(`/admin/payments/${id}/reject`, { reason }),
 
