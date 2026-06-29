@@ -66,8 +66,7 @@ export const adminAPI = {
   approvePayment:          (id)         => axiosInstance.put(`/admin/payments/${id}/approve`),
   rejectPayment:           (id, reason) => axiosInstance.put(`/admin/payments/${id}/reject`, { reason }),
 
-  // ── Task 1: Duplicate Payment Cleanup (Super Admin only for delete) ───
-  getDuplicatePayments:    ()           => axiosInstance.get('/admin/payments/duplicates'),
+  // Super Admin only — server-side enforced; button is hidden for all other roles.
   deletePayment:           (id)         => axiosInstance.delete(`/admin/payments/${id}`),
 
   // ── Payment Verification (screenshot-based workflow) ──────────────────
