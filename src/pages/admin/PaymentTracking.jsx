@@ -4,9 +4,11 @@ import {
   UserCheck, AlertTriangle, TrendingUp,
   Smartphone, Building2, Banknote,
   ShieldCheck, ShieldX, IndianRupee,
-  ArrowDownCircle, ArrowUpCircle, Receipt as ReceiptIcon
+  ArrowDownCircle, ArrowUpCircle, Receipt as ReceiptIcon,
+  Trash2, Copy
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
+import { useAuth } from '../../context/AuthContext'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import SearchBar, { FilterSelect } from '../../components/common/SearchBar'
 import Pagination from '../../components/common/Pagination'
@@ -228,9 +230,11 @@ function AddPaymentModal({ open, onClose, onSuccess }) {
 
 /* ── Main Component ──────────────────────────────────────────────────── */
 export default function PaymentTracking() {
+  const { isSuperAdmin } = useAuth()
   const [payments,      setPayments]     = useState([])
   const [transactions,  setTransactions] = useState([])
   const [trackStats,    setTrackStats]   = useState(null)
+  const [duplicates,    setDuplicates]   = useState([])
   const [loading,       setLoading]      = useState(true)
   const [refreshing,    setRefreshing]   = useState(false)
   const [search,        setSearch]       = useState('')
@@ -241,15 +245,18 @@ export default function PaymentTracking() {
   const [rejectModal,   setRejectModal]  = useState(null)
   const [rejectReason,  setRejectReason] = useState('')
   const [actionId,      setActionId]     = useState(null)
+  const [deleteTarget,  setDeleteTarget] = useState(null) // payment row pending delete confirmation
+  const [deletingId,    setDeletingId]   = useState(null)
   const PER_PAGE = 10
 
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true)
     try {
-      const [pmtsRes, statsRes, txnRes] = await Promise.allSettled([
+      const [pmtsRes, statsRes, txnRes, dupRes] = await Promise.allSettled([
         adminAPI.getAllPayments({}),
         adminAPI.getPaymentTrackingStats ? adminAPI.getPaymentTrackingStats() : Promise.reject(),
         adminAPI.getTransactionLedger ? adminAPI.getTransactionLedger() : Promise.reject(),
+        adminAPI.getDuplicatePayments ? adminAPI.getDuplicatePayments() : Promise.reject(),
       ])
       if (pmtsRes.status === 'fulfilled') {
         const d = pmtsRes.value.data
@@ -262,6 +269,10 @@ export default function PaymentTracking() {
       if (txnRes.status === 'fulfilled') {
         const d = txnRes.value.data
         setTransactions(Array.isArray(d) ? d : (d?.data ?? []))
+      }
+      if (dupRes.status === 'fulfilled') {
+        const d = dupRes.value.data
+        setDuplicates(Array.isArray(d) ? d : (d?.data ?? []))
       }
     } catch {
       if (!silent) toast.error('Could not load payments.')
@@ -291,6 +302,23 @@ export default function PaymentTracking() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Rejection failed')
     } finally { setActionId(null) }
+  }
+
+  // Task 1 — Duplicate Payment Cleanup: Super Admin only. Permanently
+  // removes the payment row from the database; every dashboard/summary/
+  // report total reads the payments table directly, so the deleted
+  // amount disappears everywhere on the next fetchAll(true) below.
+  const handleDeletePayment = async () => {
+    if (!deleteTarget) return
+    setDeletingId(deleteTarget.id)
+    try {
+      await adminAPI.deletePayment(deleteTarget.id)
+      toast.success('Payment record deleted.')
+      setDeleteTarget(null)
+      fetchAll(true)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete payment')
+    } finally { setDeletingId(null) }
   }
 
   // Pending-verification items still come from the regular payments feed —
@@ -450,6 +478,64 @@ export default function PaymentTracking() {
         </div>
       )}
 
+      {/* Task 1 — Duplicate Payment Cleanup. Visible to any Admin (read-only
+          warning); the Delete button itself only renders for Super Admin,
+          since deletion is irreversible and immediately changes collection
+          totals shown on every other screen (Admin Dashboard, Maintenance
+          Summary, Paid/Unpaid Details, Financial Summary). */}
+      {duplicates.length > 0 && (
+        <div className="card p-0 overflow-hidden border border-red-900/40">
+          <div className="flex items-center gap-2 p-4 border-b border-[#bfdbf7] bg-red-950/10">
+            <Copy size={14} className="text-red-500 flex-shrink-0" />
+            <h2 className="text-sm font-semibold text-[#022b3a]">
+              Duplicate Payments Detected
+              <span className="ml-2 text-xs font-normal text-[#1f7a8c]">({duplicates.length} {duplicates.length === 1 ? 'month' : 'months'})</span>
+            </h2>
+          </div>
+          <div className="px-4 pt-3 text-xs text-[#1f7a8c]">
+            These owners have more than one verified payment recorded for the same maintenance month.
+            {isSuperAdmin
+              ? ' Review each row and delete the extra/incorrect record — totals across Dashboard, Maintenance Summary, and Financial Summary update immediately.'
+              : ' Only a Super Admin can delete these records.'}
+          </div>
+          <div className="divide-y divide-[#bfdbf7] mt-2">
+            {duplicates.map(group => (
+              <div key={`${group.residentId}-${group.paymentMonth}`} className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-medium text-sm text-[#022b3a]">{group.residentName ?? '—'}</p>
+                    <p className="text-xs text-[#1f7a8c] font-mono">
+                      {group.flatNumber ?? '—'} · {group.paymentMonth} · {group.duplicateCount} payments totalling {fmt(group.totalAmount ?? 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {(group.payments ?? []).map(p => (
+                    <div key={p.id} className="flex items-center justify-between gap-3 text-xs bg-red-950/5 border border-red-900/20 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3 font-mono text-[#022b3a]/80">
+                        <span>#{p.id}</span>
+                        <span className="font-semibold text-[#022b3a]">{fmt(p.amount ?? 0)}</span>
+                        <span className="text-[#1f7a8c]">{p.paymentMethod ?? '—'}</span>
+                        <span className="text-[#1f7a8c]">{p.paymentDate ? formatDate(p.paymentDate) : '—'}</span>
+                        <span className="text-[#1f7a8c] truncate max-w-[160px]" title={p.transactionId}>{p.transactionId ?? '—'}</span>
+                      </div>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => setDeleteTarget(p)}
+                          disabled={deletingId === p.id}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-950/30 text-red-400 hover:bg-red-950/60 border border-red-900/50 disabled:opacity-50 transition-all flex-shrink-0">
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Unified Transaction Ledger — income (owner maintenance payments +
           maintenance batch payments) and expenses, sorted by transaction
           date descending. Read directly from GET /admin/payments/transactions,
@@ -565,6 +651,35 @@ export default function PaymentTracking() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 border border-red-800 text-white text-sm font-medium transition-all disabled:opacity-50">
                 {actionId ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <ShieldX size={13} />}
                 Confirm Reject
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete Payment Modal — Task 1: Super Admin only, irreversible */}
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Payment Record">
+        {deleteTarget && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 p-3 bg-red-950/10 border border-red-900/40 rounded-xl text-xs text-red-400">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+              <span>This permanently removes the payment from the database. It cannot be undone, and the amount will disappear from every dashboard, summary, and report immediately.</span>
+            </div>
+            <div className="p-3 bg-white rounded-xl border border-[#bfdbf7] text-sm">
+              <p className="text-[#022b3a]/60">Payment <strong className="text-[#022b3a]">#{deleteTarget.id}</strong></p>
+              <p className="text-[#1f7a8c] text-xs mt-1 font-mono">
+                {fmt(deleteTarget.amount)} · {deleteTarget.paymentMethod ?? '—'} · {deleteTarget.paymentMonth ?? '—'}
+              </p>
+              {deleteTarget.transactionId && (
+                <p className="text-[#1f7a8c] text-xs mt-1 font-mono truncate">Txn: {deleteTarget.transactionId}</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteTarget(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={handleDeletePayment} disabled={!!deletingId}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 border border-red-800 text-white text-sm font-medium transition-all disabled:opacity-50">
+                {deletingId ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <Trash2 size={13} />}
+                Permanently Delete
               </button>
             </div>
           </div>
