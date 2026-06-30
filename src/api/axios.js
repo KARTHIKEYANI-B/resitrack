@@ -21,10 +21,12 @@ const axiosInstance = axios.create({
  * Priority: localStorage first (persisted "remember me" session),
  * then sessionStorage (current-tab session only).
  */
-function getToken() {
+export function getToken() {
   return localStorage.getItem('resitrack_token')
       ?? sessionStorage.getItem('resitrack_token')
 }
+
+export { BASE_URL }
 
 axiosInstance.interceptors.request.use(
   (config) => {

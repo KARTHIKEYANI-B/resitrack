@@ -4,6 +4,7 @@ import {
   ImageIcon, AlertTriangle, ShieldCheck, ShieldX, User, Phone, IndianRupee
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
+import { getToken, BASE_URL } from '../../api/axios'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import SearchBar, { FilterSelect } from '../../components/common/SearchBar'
 import Pagination from '../../components/common/Pagination'
@@ -74,43 +75,26 @@ function SourceBadge({ source }) {
 function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId }) {
   const [rejectReason, setRejectReason] = useState('')
   const [showReject,   setShowReject]   = useState(false)
-  const [screenshotBlobUrl, setScreenshotBlobUrl] = useState(null)
-  const [screenshotLoading, setScreenshotLoading] = useState(false)
-  const [screenshotError,   setScreenshotError]   = useState(false)
+  const [screenshotBroken, setScreenshotBroken] = useState(false)
 
-  // The screenshot endpoint is ADMIN-protected (Authorization: Bearer <token>).
-  // A plain <img src>/<a href> pointed straight at that URL can't send the
-  // token, so the browser hits it unauthenticated and Spring Security returns
-  // 403. Fetch it through the authenticated axios instance instead and turn
-  // the response into a local blob URL the <img>/<a> tags can safely use.
-  useEffect(() => {
-    let cancelled  = false
-    let objectUrl  = null
-
-    setScreenshotBlobUrl(null)
-    setScreenshotError(false)
-
-    if (request?.screenshotUrl && request?.id) {
-      setScreenshotLoading(true)
-      adminAPI.getPaymentScreenshot(request.id)
-        .then(res => {
-          if (cancelled) return
-          objectUrl = URL.createObjectURL(res.data)
-          setScreenshotBlobUrl(objectUrl)
-        })
-        .catch(() => { if (!cancelled) setScreenshotError(true) })
-        .finally(() => { if (!cancelled) setScreenshotLoading(false) })
-    }
-
-    return () => {
-      cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-    }
-  }, [request?.id, request?.screenshotUrl])
+  useEffect(() => { setScreenshotBroken(false) }, [request?.id])
 
   if (!request) return null
 
-  const screenshotUrl = screenshotBlobUrl
+  // The screenshot endpoint is ADMIN-protected (Authorization: Bearer <token>).
+  // A plain <img src>/<a href> can't attach that header, so the browser would
+  // hit it unauthenticated and Spring Security would return 403 — regardless
+  // of whether it's loaded as an <img>, opened in a new tab, or its link is
+  // copied/downloaded directly. Instead of relying on the backend's own
+  // (environment-dependent) absolute base URL, build the path the same way
+  // the rest of this SPA already calls the API, and pass the token as a
+  // query parameter — JwtAuthenticationFilter accepts it from there as a
+  // fallback when no Authorization header is present, going through the
+  // exact same validation/role checks as every other request.
+  const token = getToken()
+  const screenshotUrl = (request.screenshotUrl && token)
+    ? `${BASE_URL}/admin/payment-verification/${request.id}/screenshot?token=${encodeURIComponent(token)}`
+    : null
 
   const handleReject = () => {
     onReject(request.id, rejectReason)
@@ -167,12 +151,7 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#022b3a]">Payment Screenshot</p>
               <div className="border border-[#bfdbf7] rounded-xl overflow-hidden">
-                {screenshotLoading ? (
-                  <div className="flex items-center justify-center gap-2 p-6 text-sm text-[#1f7a8c]">
-                    <div className="w-4 h-4 border-2 border-[#1f7a8c]/30 border-t-[#1f7a8c] rounded-full animate-spin" />
-                    Loading screenshot…
-                  </div>
-                ) : screenshotError ? (
+                {!screenshotUrl || screenshotBroken ? (
                   <div className="flex items-center justify-center gap-2 p-6 text-sm text-red-500">
                     <AlertTriangle size={14} /> Could not load screenshot
                   </div>
@@ -184,7 +163,7 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
                 ) : (
                   <img src={screenshotUrl} alt="Payment screenshot"
                     className="w-full max-h-64 object-contain bg-[#f0f8fb]"
-                    onError={e => { e.target.style.display='none' }} />
+                    onError={() => setScreenshotBroken(true)} />
                 )}
               </div>
               {screenshotUrl && (
