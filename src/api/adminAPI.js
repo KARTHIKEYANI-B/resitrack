@@ -33,9 +33,6 @@ export const adminAPI = {
   updateMaintenance:   (id, data) => axiosInstance.put(`/admin/maintenance/${id}`, data),
   deleteMaintenance:   (id)       => axiosInstance.delete(`/admin/maintenance/${id}`),
 
-  // ── Maintenance List: per-owner calculated amounts ────────────────────
-  // FIX: This method was missing — caused "Could not load maintenance list" error.
-  // Calls GET /admin/maintenance/owner-list?year=YYYY&month=MM
   // Returns { flatOwners, villaOwners, ratePerSqFt, grandTotal, ... }
   getMaintenanceOwnerList: (year, month) =>
     axiosInstance.get('/admin/maintenance/owner-list', { params: { year, month } }),
@@ -46,9 +43,6 @@ export const adminAPI = {
   updateBatchStatus:      (id, status) => axiosInstance.put(`/admin/maintenance/batches/${id}/status`, { status }),
   deleteMaintenanceBatch: (id)         => axiosInstance.delete(`/admin/maintenance/batches/${id}`),
 
-  // ── Maintenance Batch — per-batch payment ledger (Paid List, verify) ───
-  // Fully separate from the regular monthly Payment Verification screens;
-  // paidCount/unpaidCount returned by getMaintenanceBatches above now come
   // straight from this same ledger, scoped strictly to each batch.
   getBatchPaymentsForBatch: (batchId)        => axiosInstance.get(`/admin/maintenance/batch-payments/batch/${batchId}`),
   getBatchPaidList:         (batchId)        => axiosInstance.get(`/admin/maintenance/batch-payments/batch/${batchId}/paid-list`),
@@ -76,6 +70,9 @@ export const adminAPI = {
   verifyPaymentRequest:        (id)         => axiosInstance.put(`/admin/payment-verification/${id}/verify`),
   rejectPaymentRequest:        (id, reason) => axiosInstance.put(`/admin/payment-verification/${id}/reject`, { reason }),
   getVerificationPendingCount: ()           => axiosInstance.get('/admin/payment-verification/pending-count'),
+
+  getPaymentScreenshot:        (id)         =>
+    axiosInstance.get(`/admin/payment-verification/${id}/screenshot`, { responseType: 'blob' }),
 
   // ── Expense Categories ─────────────────────────────────────────────────
   getExpenseCategories:       ()         => axiosInstance.get('/admin/expenses/categories'),

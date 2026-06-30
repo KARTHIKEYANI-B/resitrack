@@ -74,12 +74,43 @@ function SourceBadge({ source }) {
 function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId }) {
   const [rejectReason, setRejectReason] = useState('')
   const [showReject,   setShowReject]   = useState(false)
+  const [screenshotBlobUrl, setScreenshotBlobUrl] = useState(null)
+  const [screenshotLoading, setScreenshotLoading] = useState(false)
+  const [screenshotError,   setScreenshotError]   = useState(false)
+
+  // The screenshot endpoint is ADMIN-protected (Authorization: Bearer <token>).
+  // A plain <img src>/<a href> pointed straight at that URL can't send the
+  // token, so the browser hits it unauthenticated and Spring Security returns
+  // 403. Fetch it through the authenticated axios instance instead and turn
+  // the response into a local blob URL the <img>/<a> tags can safely use.
+  useEffect(() => {
+    let cancelled  = false
+    let objectUrl  = null
+
+    setScreenshotBlobUrl(null)
+    setScreenshotError(false)
+
+    if (request?.screenshotUrl && request?.id) {
+      setScreenshotLoading(true)
+      adminAPI.getPaymentScreenshot(request.id)
+        .then(res => {
+          if (cancelled) return
+          objectUrl = URL.createObjectURL(res.data)
+          setScreenshotBlobUrl(objectUrl)
+        })
+        .catch(() => { if (!cancelled) setScreenshotError(true) })
+        .finally(() => { if (!cancelled) setScreenshotLoading(false) })
+    }
+
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [request?.id, request?.screenshotUrl])
 
   if (!request) return null
 
-  const screenshotUrl = request.screenshotUrl
-    ? `${import.meta.env.VITE_API_BASE_URL || ''}/api${request.screenshotUrl.replace('/api', '')}`
-    : null
+  const screenshotUrl = screenshotBlobUrl
 
   const handleReject = () => {
     onReject(request.id, rejectReason)
@@ -132,11 +163,20 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
 
         {/* Screenshot (not applicable for CASH) */}
         {!isCash && (
-          screenshotUrl ? (
+          request.screenshotUrl ? (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#022b3a]">Payment Screenshot</p>
               <div className="border border-[#bfdbf7] rounded-xl overflow-hidden">
-                {request.screenshotFileName?.toLowerCase().endsWith('.pdf') ? (
+                {screenshotLoading ? (
+                  <div className="flex items-center justify-center gap-2 p-6 text-sm text-[#1f7a8c]">
+                    <div className="w-4 h-4 border-2 border-[#1f7a8c]/30 border-t-[#1f7a8c] rounded-full animate-spin" />
+                    Loading screenshot…
+                  </div>
+                ) : screenshotError ? (
+                  <div className="flex items-center justify-center gap-2 p-6 text-sm text-red-500">
+                    <AlertTriangle size={14} /> Could not load screenshot
+                  </div>
+                ) : request.screenshotFileName?.toLowerCase().endsWith('.pdf') ? (
                   <a href={screenshotUrl} target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 p-6 text-sm text-[#1f7a8c] hover:text-[#022b3a] transition-colors">
                     <Eye size={16} /> View PDF Screenshot
@@ -147,10 +187,18 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
                     onError={e => { e.target.style.display='none' }} />
                 )}
               </div>
-              <a href={screenshotUrl} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-[#1f7a8c] hover:text-[#022b3a] underline">
-                Open in new tab
-              </a>
+              {screenshotUrl && (
+                <div className="flex items-center gap-3">
+                  <a href={screenshotUrl} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-[#1f7a8c] hover:text-[#022b3a] underline">
+                    Open in new tab
+                  </a>
+                  <a href={screenshotUrl} download={request.screenshotFileName || 'payment-screenshot'}
+                    className="text-xs text-[#1f7a8c] hover:text-[#022b3a] underline">
+                    Download
+                  </a>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center gap-2 p-4 bg-[#e1e5f2]/50 rounded-xl text-xs text-[#1f7a8c]">
