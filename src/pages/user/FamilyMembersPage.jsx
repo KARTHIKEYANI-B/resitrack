@@ -130,7 +130,7 @@ function MemberFormModal({ member, onClose, onSave }) {
               style={{ borderColor: P.border, color: P.dark }}>
               <option value="">Select relationship</option>
               {RELATIONSHIPS.map(r => (
-                <option key={r} value={r}>{REL_ICONS[r]} {REL_LABELS[r]}</option>
+                <option key={r} value={r}>{REL_LABELS[r]}</option>
               ))}
             </select>
           </div>
