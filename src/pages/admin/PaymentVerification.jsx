@@ -4,7 +4,6 @@ import {
   ImageIcon, AlertTriangle, ShieldCheck, ShieldX, User, Phone, IndianRupee
 } from 'lucide-react'
 import { adminAPI } from '../../api/adminAPI'
-import { getToken, BASE_URL } from '../../api/axios'
 import { PageLoader } from '../../components/common/LoadingSpinner'
 import SearchBar, { FilterSelect } from '../../components/common/SearchBar'
 import Pagination from '../../components/common/Pagination'
@@ -81,20 +80,10 @@ function ViewRequestModal({ request, open, onClose, onVerify, onReject, actionId
 
   if (!request) return null
 
-  // The screenshot endpoint is ADMIN-protected (Authorization: Bearer <token>).
-  // A plain <img src>/<a href> can't attach that header, so the browser would
-  // hit it unauthenticated and Spring Security would return 403 — regardless
-  // of whether it's loaded as an <img>, opened in a new tab, or its link is
-  // copied/downloaded directly. Instead of relying on the backend's own
-  // (environment-dependent) absolute base URL, build the path the same way
-  // the rest of this SPA already calls the API, and pass the token as a
-  // query parameter — JwtAuthenticationFilter accepts it from there as a
-  // fallback when no Authorization header is present, going through the
-  // exact same validation/role checks as every other request.
-  const token = getToken()
-  const screenshotUrl = (request.screenshotUrl && token)
-    ? `${BASE_URL}/admin/payment-verification/${request.id}/screenshot?token=${encodeURIComponent(token)}`
-    : null
+  // screenshotUrl is now a permanent Cloudinary secure_url returned straight
+  // from the backend — no auth proxy or token needed, it's already a public
+  // HTTPS URL, and it survives redeploys since it isn't on local disk.
+  const screenshotUrl = request.screenshotUrl || null
 
   const handleReject = () => {
     onReject(request.id, rejectReason)
